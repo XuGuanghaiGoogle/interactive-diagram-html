@@ -1,0 +1,9 @@
+# 本地试运行产物（示例成品在 examples/ 下，需入库）
+out/
+*.tmp.html
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

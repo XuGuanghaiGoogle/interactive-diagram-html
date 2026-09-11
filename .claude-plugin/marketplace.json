@@ -1,0 +1,25 @@
+{
+  "name": "interactive-diagram-html",
+  "owner": {
+    "name": "XuGuanghaiGoogle"
+  },
+  "metadata": {
+    "description": "对话式生成单文件交互式图解 HTML（构成图 / 流程图 / 开发计划等）的 Claude Code skill",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "interactive-diagram-html",
+      "description": "通过交互式提问，把系统构成图、处理流程图、开发计划、业务流程、体制图等做成可点击查看说明的单文件交互式 HTML（右侧说明面板、平移缩放、阶段范围开关、一览表）",
+      "version": "1.0.0",
+      "author": {
+        "name": "XuGuanghaiGoogle"
+      },
+      "keywords": ["diagram", "architecture", "flowchart", "project-plan", "html", "documentation"],
+      "category": "productivity",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/interactive-diagram-html"]
+    }
+  ]
+}
