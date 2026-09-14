@@ -27,11 +27,23 @@
   .tools button.pri{border-color:#82b366;color:#2e7d32;background:#f2fbf3;font-weight:700}
   .tools .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
   .tools .tip{font-size:11.5px;color:var(--muted);margin-left:auto}
-  .board{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  .board{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto;
          box-shadow:0 2px 10px rgba(20,30,60,.06);height:clamp(460px,74vh,980px);position:relative}
-  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+  #chart{display:block;margin:0 auto;touch-action:none;cursor:grab;
       -webkit-user-select:none;user-select:none;background:#fff}
-  svg.grabbing{cursor:grabbing}
+  #chart.grabbing{cursor:grabbing}
+  .tools button[disabled]{opacity:.45;cursor:default}
+  .tools button.edit-on{border-color:#2563eb;color:#1d4ed8;background:#eff6ff;font-weight:700}
+  .tools .status{font-size:12px;color:#1d4ed8}
+  .tools .status.err{color:#c62828}
+  body.editing .board{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.18)}
+  body.editing .ng{cursor:move}
+  .ng .pt{opacity:0;cursor:crosshair;transition:opacity .12s}
+  body.editing .ng:hover .pt{opacity:1}
+  .ng .pt:hover{fill:#2563eb}
+  .ng .rs{opacity:0;cursor:ew-resize;transition:opacity .12s}
+  body.editing .ng:hover .rs{opacity:.85}
+  .ehit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;pointer-events:stroke}
   .nd{cursor:pointer}
   .nd .shp{transition:filter .15s ease}
   .nd:hover .shp{filter:brightness(.96) drop-shadow(0 2px 4px rgba(0,0,0,.18))}
@@ -52,6 +64,12 @@
   .note.wide{grid-column:1/-1}
   .note h3{margin:0 0 8px;font-size:14px}
   .note ul,.note ol{margin:0;padding-left:18px;font-size:12.5px;line-height:1.9;color:#3b4453}
+  .stats{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 14px}
+  .stats h3{margin:0 0 4px;font-size:14px}
+  .stats .cap{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .stats .chartbox{position:relative;max-width:820px}
+  .stats svg{display:block;width:100%;height:auto}
+  .stats .ctip{position:absolute;pointer-events:none;background:#1b2330;color:#fff;font-size:12px;line-height:1.7;border-radius:6px;padding:6px 10px;white-space:nowrap;z-index:5}
   code{background:#eef1f6;border-radius:4px;padding:1px 5px;font-size:12px}
 
   #panel{position:fixed;top:0;right:0;width:var(--panel);height:100vh;background:#fff;
@@ -89,7 +107,9 @@
     <div class="legend" id="extralegend"></div>
     <div class="hint" id="hint"></div>
   </header>
+  <div class="stats" id="stats"></div>
   <div class="tools" id="tools"></div>
+  <div class="tools" id="edittools"></div>
   <div class="board"><svg id="chart" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg></div>
   <div id="tables"></div>
   <div class="notes" id="notes"></div>
@@ -118,19 +138,40 @@ const I18N={
      role:'役割',fn:'主な機能',io:'入力 / 出力・接続',uses:'関連（使用する）',usedBy:'関連（使われる）',
      phase:'{label}',rel:'補足・対応',close:'閉じる',toggleOn:'{label} を強調',toggleOff:'強調を解除',
      phaseLegend:'ブロック右端の色帯＝{label}：',dotLegend:'ブロック右下の●＝関連先：',tagLegend:'左下のタグ：',
-     component:'コンポーネント',level:'判定',detail:'内容'},
+     component:'コンポーネント',level:'判定',detail:'内容',
+     edit:'レイアウト編集',editDone:'編集を終了',undo:'元に戻す',delEdge:'線を削除',dash:'破線',bold:'太線',label:'ラベル',save:'保存',
+     editHint:'編集中：ブロックをドラッグで移動、右下の青い四角で幅を変更。ブロック上の青い点から別のブロックへドラッグすると線を追加。線をクリックで削除・スタイル変更、ダブルクリックでラベル編集。Ctrl+Z で元に戻す。',
+     saved:'保存して再生成しました',savedWarn:'保存しました（検証警告 {label} 件、コンソール参照）',saveFail:'ファイルに書き戻せないため JSON をダウンロードしました',
+     labelPrompt:'線のラベル（空欄で削除）',leave:'未保存の変更があります',
+     focus:'{label}を強調',chartY:'画面数',newMark:'新規',effortKey:'工数',effortFmt:'約 {label} 人月',
+     sumCols:['フェーズ','期間','目標','機能数','画面数（新規）','投入 / 換算工数','主な機能'],
+     tipScreens:'画面数',tipNew:'新規',tipFeatures:'機能数',tipEffort:'換算工数',tipActual:'投入'},
  zh:{fitw:'适合宽度',all:'全体显示',tip:'拖拽移动 / Ctrl（⌘）+ 滚轮缩放',
      hint:'▶ 点击方块，在右侧查看说明；只有相关的方块会被突出显示。',
      role:'作用',fn:'主要功能',io:'输入 / 输出・连接',uses:'关联（使用）',usedBy:'关联（被使用）',
      phase:'{label}',rel:'补充・对应',close:'关闭',toggleOn:'突出 {label}',toggleOff:'取消突出',
      phaseLegend:'方块右侧色条＝{label}：',dotLegend:'方块右下的●＝关联对象：',tagLegend:'左下标签：',
-     component:'组件',level:'判定',detail:'内容'},
+     component:'组件',level:'判定',detail:'内容',
+     edit:'编辑布局',editDone:'结束编辑',undo:'撤销',delEdge:'删除连线',dash:'虚线',bold:'粗线',label:'标签',save:'保存',
+     editHint:'编辑中：拖动方块移动位置，拖右下角蓝色小方块调整宽度；鼠标移到方块上，从边上的蓝点拖到另一个方块即可连线；点击连线后可删除或改样式，双击连线编辑标签。Ctrl+Z 撤销。',
+     saved:'已保存并重新生成',savedWarn:'已保存（校验警告 {label} 条，详见控制台）',saveFail:'无法写回文件，已改为下载 JSON',
+     labelPrompt:'连线标签（留空为删除）',leave:'有未保存的修改',
+     focus:'突出{label}',chartY:'画面数',newMark:'新增',effortKey:'工数',effortFmt:'约 {label} 人月',
+     sumCols:['阶段','期间','目标','机能数','画面数（新增）','实投 / 换算工数','主要机能'],
+     tipScreens:'画面数',tipNew:'新增',tipFeatures:'机能数',tipEffort:'换算工数',tipActual:'实投'},
  en:{fitw:'Fit width',all:'Show all',tip:'Drag to pan / Ctrl(⌘)+wheel to zoom',
      hint:'▶ Click a block to open its details on the right. Related blocks are highlighted.',
      role:'Role',fn:'Key functions',io:'Inputs / outputs',uses:'Uses',usedBy:'Used by',
      phase:'{label}',rel:'Notes',close:'Close',toggleOn:'Highlight {label}',toggleOff:'Clear highlight',
      phaseLegend:'Right-edge color = {label}:',dotLegend:'Dots = related to:',tagLegend:'Tags:',
-     component:'Component',level:'Level',detail:'Detail'}
+     component:'Component',level:'Level',detail:'Detail',
+     edit:'Edit layout',editDone:'Done',undo:'Undo',delEdge:'Delete line',dash:'Dashed',bold:'Bold',label:'Label',save:'Save',
+     editHint:'Editing: drag blocks to move; drag the blue corner to resize width. Hover a block and drag from a blue dot to another block to connect. Click a line to delete or restyle; double-click to edit its label. Ctrl+Z to undo.',
+     saved:'Saved and rebuilt',savedWarn:'Saved ({label} validation warnings, see console)',saveFail:'Could not write back; downloaded JSON instead',
+     labelPrompt:'Line label (empty to remove)',leave:'You have unsaved changes',
+     focus:'Highlight {label}',chartY:'Screens',newMark:'new',effortKey:'Effort',effortFmt:'~{label} person-months',
+     sumCols:['Phase','Period','Goal','Features','Screens (new)','Actual / est. effort','Main features'],
+     tipScreens:'Screens',tipNew:'new',tipFeatures:'Features',tipEffort:'Est. effort',tipActual:'Actual'}
 };
 const meta=DATA.meta||{};
 const L=Object.assign({},I18N[meta.lang]||I18N.ja,DATA.uiText||{});
@@ -157,8 +198,9 @@ defs.innerHTML=
  '<marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5a9c56"/></marker>'+
  '<marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/></marker>';
 svg.appendChild(defs);
-const gGrid=el('g'),gBand=el('g'),gEdge=el('g'),gNode=el('g');
-[gGrid,gBand,gEdge,gNode].forEach(function(g){svg.appendChild(g);});
+const gGrid=el('g'),gBand=el('g'),gEdge=el('g'),gNode=el('g'),gTmp=el('g',{'pointer-events':'none'});
+[gGrid,gBand,gEdge,gNode,gTmp].forEach(function(g){svg.appendChild(g);});
+const ED={on:false,drag:null,link:null,sel:-1,hist:[],dirty:false,justDragged:false};
 
 const CAT=DATA.categories||{};
 const PH=DATA.phase||null;
@@ -248,16 +290,29 @@ function drawNode(n){
     t.textContent=code;g.appendChild(t);tx+=wd+3;
   });
   const clickable=!!(n.role||n.fn||n.sections||n.kv);
+  g.setAttribute('data-id',n.id);
   if(clickable){
-    g.setAttribute('class','nd');g.setAttribute('data-id',n.id);g.setAttribute('tabindex','0');
-    g.addEventListener('click',function(){if(!PAN.moved)open(n.id,g);});
+    g.setAttribute('class','nd ng');g.setAttribute('tabindex','0');
+    g.addEventListener('click',function(){if(!PAN.moved&&!ED.justDragged)open(n.id,g);});
     g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open(n.id,g);}});
     GEL[n.id]=g;
-  }else{g.setAttribute('data-id',n.id);}
+  }else{g.setAttribute('class','ng');}
+  if(ED.on){
+    [['l',x,cy],['r',x+w,cy],['t',cx,y],['b',cx,y+h]].forEach(function(p){
+      const c=el('circle',{cx:p[1],cy:p[2],r:6,fill:'#fff',stroke:'#2563eb','stroke-width':1.8});
+      c.setAttribute('class','pt');c.setAttribute('data-side',p[0]);g.appendChild(c);
+    });
+    const rs=el('rect',{x:x+w-12,y:y+h-12,width:12,height:12,rx:2,fill:'#2563eb'});
+    rs.setAttribute('class','rs');rs.setAttribute('data-resize','1');g.appendChild(rs);
+    g.addEventListener('pointerdown',function(e){nodeDown(e,n);});
+  }
   gNode.appendChild(g);
   N[n.id]={x:x,y:y,w:w,h:h,cx:cx,cy:cy};INFO[n.id]=n;
 }
-(DATA.nodes||[]).forEach(drawNode);
+function renderNodes(){
+  gNode.innerHTML='';Object.keys(GEL).forEach(function(k){delete GEL[k];});cur=null;
+  (DATA.nodes||[]).forEach(drawNode);
+}
 
 /* ---------- edges (routing must match scripts/build.mjs) ---------- */
 function port(ref){
@@ -268,23 +323,88 @@ function port(ref){
   if(s==='t')return{x:n.cx,y:n.y};
   return{x:n.cx,y:n.y+n.h};
 }
+function nodeOf(id){return N[id];}
+/* ROUTE-BEGIN：由 scripts/sync-route.mjs 从 scripts/route-block.js 注入 engine.html 与 build.mjs，两处必须一致，勿直接改 */
+/* 直角走线：始终从起点端口的外侧出发、从终点端口的外侧进入，不改用户选的端口。
+   手写 via / mx / my 优先；否则在候选路线中选不穿过两端方块、拐点最少、最短的一条。 */
 function route(e){
-  const sa=(e.from.split(':')[1]||'r'),sb=(e.to.split(':')[1]||'l');
+  const G=20;
+  const ia=String(e.from).split(':'),ib=String(e.to).split(':');
+  const sa=ia[1]||'r',sb=ib[1]||'l';
   let p1=port(e.from),p2=port(e.to);if(!p1||!p2)return null;
   if(e.d1)p1={x:p1.x+(e.d1[0]||0),y:p1.y+(e.d1[1]||0)};
   if(e.d2)p2={x:p2.x+(e.d2[0]||0),y:p2.y+(e.d2[1]||0)};
   if(e.via)return[p1].concat(e.via.map(function(v){return{x:v[0],y:v[1]};})).concat([p2]);
-  if((sa==='r'&&sb==='l')||(sa==='l'&&sb==='r')){const mx=e.mx!=null?e.mx:(p1.x+p2.x)/2;return[p1,{x:mx,y:p1.y},{x:mx,y:p2.y},p2];}
-  if((sa==='b'&&sb==='t')||(sa==='t'&&sb==='b')){const my=e.my!=null?e.my:(p1.y+p2.y)/2;return[p1,{x:p1.x,y:my},{x:p2.x,y:my},p2];}
-  if(sa==='b'||sa==='t')return[p1,{x:p1.x,y:p2.y},p2];
-  return[p1,{x:p2.x,y:p1.y},p2];
+  if(e.mx!=null)return[p1,{x:e.mx,y:p1.y},{x:e.mx,y:p2.y},p2];
+  if(e.my!=null)return[p1,{x:p1.x,y:e.my},{x:p2.x,y:e.my},p2];
+  const na=nodeOf(ia[0]),nb=nodeOf(ib[0]);
+  /* 外伸段默认 G；若正前方紧挨着另一端的方块，缩短到空隙的一半，避免伸进对方 */
+  function out(p,s,other){let d=G;
+    if(other){
+      if((s==='b'||s==='t')&&p.x>other.x&&p.x<other.x+other.w){const gap=s==='b'?other.y-p.y:p.y-(other.y+other.h);if(gap>=0&&gap<2*G)d=Math.max(1,gap/2);}
+      if((s==='r'||s==='l')&&p.y>other.y&&p.y<other.y+other.h){const gap=s==='r'?other.x-p.x:p.x-(other.x+other.w);if(gap>=0&&gap<2*G)d=Math.max(1,gap/2);}
+    }
+    return{x:p.x+(s==='r'?d:s==='l'?-d:0),y:p.y+(s==='b'?d:s==='t'?-d:0)};}
+  const o=out(p1,sa,nb),q=out(p2,sb,na);
+  const boxes=[na,nb].filter(Boolean);
+  const L=Math.min.apply(null,boxes.map(function(b){return b.x;}).concat([o.x,q.x]))-G;
+  const R=Math.max.apply(null,boxes.map(function(b){return b.x+b.w;}).concat([o.x,q.x]))+G;
+  const T=Math.min.apply(null,boxes.map(function(b){return b.y;}).concat([o.y,q.y]))-G;
+  const B=Math.max.apply(null,boxes.map(function(b){return b.y+b.h;}).concat([o.y,q.y]))+G;
+  const mx=(o.x+q.x)/2,my=(o.y+q.y)/2;
+  /* 同为 4 点时先出现的优先：中线折线在前，保持 mx / my 默认取中点的旧行为 */
+  const mids=[
+    [{x:mx,y:o.y},{x:mx,y:q.y}],[{x:o.x,y:my},{x:q.x,y:my}],
+    [{x:q.x,y:o.y}],[{x:o.x,y:q.y}],
+    [{x:R,y:o.y},{x:R,y:q.y}],[{x:L,y:o.y},{x:L,y:q.y}],
+    [{x:o.x,y:B},{x:q.x,y:B}],[{x:o.x,y:T},{x:q.x,y:T}]
+  ];
+  function simplify(pts){
+    const a=[];pts.forEach(function(p){const l=a[a.length-1];if(!l||l.x!==p.x||l.y!==p.y)a.push(p);});
+    for(let i=a.length-2;i>0;i--){const u=a[i-1],v=a[i],w=a[i+1];
+      if((u.x===v.x&&v.x===w.x)||(u.y===v.y&&v.y===w.y))a.splice(i,1);}
+    return a;
+  }
+  function hits(u,v,b){
+    const x0=b.x+1,x1=b.x+b.w-1,y0=b.y+1,y1=b.y+b.h-1;
+    if(u.y===v.y)return u.y>y0&&u.y<y1&&Math.max(u.x,v.x)>x0&&Math.min(u.x,v.x)<x1;
+    return u.x>x0&&u.x<x1&&Math.max(u.y,v.y)>y0&&Math.min(u.y,v.y)<y1;
+  }
+  function ok(pts){
+    for(let i=0;i<pts.length-1;i++){const u=pts[i],v=pts[i+1];
+      if(u.x!==v.x&&u.y!==v.y)return false;
+      for(let k=0;k<boxes.length;k++)if(hits(u,v,boxes[k]))return false;}
+    /* 离开起点、进入终点的方向必须与端口朝向一致 */
+    const s1=pts[1],s2=pts[pts.length-2];
+    const dirOk=function(p,n,s){return s==='r'?n.x>p.x:s==='l'?n.x<p.x:s==='b'?n.y>p.y:n.y<p.y;};
+    return dirOk(p1,s1,sa)&&dirOk(p2,s2,sb);
+  }
+  function len(pts){let s=0;for(let i=0;i<pts.length-1;i++)s+=Math.abs(pts[i].x-pts[i+1].x)+Math.abs(pts[i].y-pts[i+1].y);return s;}
+  let best=null;
+  mids.forEach(function(m){
+    const pts=simplify([p1,o].concat(m,[q,p2]));
+    if(pts.length<2||!ok(pts))return;
+    if(!best||pts.length<best.length||(pts.length===best.length&&len(pts)<len(best)))best=pts;
+  });
+  return best||simplify([p1,o,{x:R,y:o.y},{x:R,y:q.y},q,p2]);
 }
-(DATA.edges||[]).forEach(function(e){
+/* ROUTE-END */
+function renderEdges(){
+gEdge.innerHTML='';
+(DATA.edges||[]).forEach(function(e,idx){
   const pts=route(e);if(!pts)return;
   const d=pts.map(function(p,i){return(i?'L':'M')+p.x+','+p.y;}).join(' ');
-  const col=e.bold?'#c2410c':(e.dash?'#5a9c56':'#5a6472');
-  gEdge.appendChild(el('path',{d:d,fill:'none',stroke:col,'stroke-width':e.bold?2.6:(e.dash?1.2:1.5),
+  const selE=ED.on&&ED.sel===idx;
+  const col=selE?'#2563eb':(e.bold?'#c2410c':(e.dash?'#5a9c56':'#5a6472'));
+  gEdge.appendChild(el('path',{d:d,fill:'none',stroke:col,'stroke-width':(e.bold?2.6:(e.dash?1.2:1.5))+(selE?1.2:0),
     'stroke-dasharray':e.dash?'6 5':'none','marker-end':'url(#'+(e.bold?'arb':(e.dash?'ard':'ar'))+')',opacity:e.dash?.9:1}));
+  if(ED.on){
+    const hit=el('path',{d:d});hit.setAttribute('class','ehit');
+    hit.addEventListener('pointerdown',function(ev){ev.stopPropagation();});
+    hit.addEventListener('click',function(ev){ev.stopPropagation();selectEdge(idx);});
+    hit.addEventListener('dblclick',function(ev){ev.stopPropagation();selectEdge(idx);editLabel();});
+    gEdge.appendChild(hit);
+  }
   if(e.label){
     const m=e.lp!=null?e.lp:Math.max(0,Math.floor(pts.length/2)-1);
     const A=pts[m],B=pts[m+1]||pts[m];
@@ -296,10 +416,13 @@ function route(e){
   }
 });
 (DATA.labels||[]).forEach(function(l){freeLabel(l);});
+}
+let cur=null;
+(DATA.nodes||[]).forEach(syncPhase);
+renderNodes();renderEdges();
 
 /* ---------- panel ---------- */
 const P={badge:$('p-badge'),title:$('p-title'),sub:$('p-sub'),body:$('p-body')};
-let cur=null;
 function chip(id){const d=INFO[id];if(!d)return '';
   const c=DOT[id]?'<span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:'+DOT[id]+'"></span>':'';
   return '<span class="chip" data-go="'+esc(id)+'">'+c+esc(d.t||id)+'</span>';}
@@ -340,31 +463,108 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
 svg.addEventListener('click',function(e){if(e.target===svg&&!PAN.moved)close();});
 
 /* ---------- pan & zoom (no pointer capture: it would swallow node clicks) ---------- */
-const VB={x:0,y:0,w:CW,h:CH};
-function rect(){return svg.getBoundingClientRect();}
-function ratioH(w){const r=rect();return(r.width>0&&r.height>0)?w*r.height/r.width:w*0.55;}
-function setVB(){svg.setAttribute('viewBox',VB.x+' '+VB.y+' '+VB.w+' '+VB.h);}
-function clampVB(){const mg=120;
-  if(VB.w<CW+2*mg)VB.x=Math.max(-mg,Math.min(VB.x,CW+mg-VB.w));else VB.x=(CW-VB.w)/2;
-  if(VB.h<CH+2*mg)VB.y=Math.max(-mg,Math.min(VB.y,CH+mg-VB.h));else VB.y=(CH-VB.h)/2;}
-function fitWidth(){VB.w=CW;VB.h=ratioH(CW);VB.x=0;VB.y=0;clampVB();setVB();}
-function fitAll(){const r=rect();VB.w=Math.max(CW,CH*r.width/r.height);VB.h=ratioH(VB.w);VB.x=(CW-VB.w)/2;VB.y=(CH-VB.h)/2;setVB();}
-function showRect(b){const r=rect(),w=Math.max(b[2],b[3]*r.width/r.height);
-  VB.w=w;VB.h=ratioH(w);VB.x=b[0]+b[2]/2-VB.w/2;VB.y=b[1]+b[3]/2-VB.h/2;clampVB();setVB();}
-function zoomAt(f,cx,cy){const nw=Math.max(320,Math.min(CW*1.6,VB.w*f)),k=nw/VB.w;
-  VB.x=cx-(cx-VB.x)*k;VB.y=cy-(cy-VB.y)*k;VB.w=nw;VB.h*=k;clampVB();setVB();}
-function centerOn(id){const n=N[id];if(!n)return;VB.x=n.cx-VB.w/2;VB.y=n.cy-VB.h/2;clampVB();setVB();}
+/* 画面は固定 viewBox、表示倍率 Z で svg の実寸を決め、board のスクロールで移動する（全体が収まらない時はスクロールバー） */
+const board=document.querySelector('.board');
+let Z=1;
+function bw(){return board.clientWidth||800;}
+function bh(){return board.clientHeight||500;}
+function setZ(z){Z=Math.max(0.2,Math.min(3,z));svg.setAttribute('width',Math.round(CW*Z));svg.setAttribute('height',Math.round(CH*Z));}
+function scrollToSvg(x,y){board.scrollLeft=x*Z-bw()/2;board.scrollTop=y*Z-bh()/2;}
+function fitWidth(){setZ(bw()/CW);board.scrollLeft=0;board.scrollTop=0;}
+function fitAll(){setZ(Math.min(bw()/CW,bh()/CH));board.scrollLeft=0;board.scrollTop=0;}
+function showRect(b){setZ(Math.min(bw()/b[2],bh()/b[3]));board.scrollLeft=b[0]*Z;board.scrollTop=b[1]*Z;}
+function zoomAt(f,cx,cy){const r=board.getBoundingClientRect(),sr=svg.getBoundingClientRect();
+  const vx=sr.left+cx*Z-r.left,vy=sr.top+cy*Z-r.top;setZ(Z/f);
+  const off=Math.max(0,(bw()-CW*Z)/2);board.scrollLeft=cx*Z+off-vx;board.scrollTop=cy*Z-vy;}
+function centerOn(id){const n=N[id];if(!n)return;scrollToSvg(n.cx,n.cy);}
 function toSvg(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
 const PAN={on:false,moved:false};
 function onMove(e){if(!PAN.on)return;const dx=e.clientX-PAN.sx,dy=e.clientY-PAN.sy;
   if(!PAN.moved&&Math.abs(dx)+Math.abs(dy)<5)return;PAN.moved=true;
-  VB.x=PAN.ox-dx*PAN.s;VB.y=PAN.oy-dy*PAN.s;clampVB();setVB();}
+  board.scrollLeft=PAN.ox-dx;board.scrollTop=PAN.oy-dy;}
 function endPan(){if(!PAN.on)return;PAN.on=false;svg.classList.remove('grabbing');
   window.removeEventListener('pointermove',onMove);window.removeEventListener('pointerup',endPan);window.removeEventListener('pointercancel',endPan);}
 svg.addEventListener('pointerdown',function(e){if(e.button!==0)return;
-  PAN.on=true;PAN.moved=false;PAN.s=1/svg.getScreenCTM().a;PAN.sx=e.clientX;PAN.sy=e.clientY;PAN.ox=VB.x;PAN.oy=VB.y;
+  if(ED.on&&ED.sel>=0){ED.sel=-1;renderEdges();syncEditBtns();}
+  PAN.on=true;PAN.moved=false;PAN.sx=e.clientX;PAN.sy=e.clientY;PAN.ox=board.scrollLeft;PAN.oy=board.scrollTop;
   svg.classList.add('grabbing');window.addEventListener('pointermove',onMove);window.addEventListener('pointerup',endPan);window.addEventListener('pointercancel',endPan);});
 svg.addEventListener('wheel',function(e){if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();const p=toSvg(e);zoomAt(e.deltaY>0?1.18:1/1.18,p.x,p.y);},{passive:false});
+
+/* ---------- layout editing ---------- */
+const SNAP=10;
+function snap(v){return Math.round(v/SNAP)*SNAP;}
+function pushHist(){ED.hist.push(JSON.stringify({nodes:DATA.nodes,edges:DATA.edges}));if(ED.hist.length>100)ED.hist.shift();setTimeout(syncEditBtns,0);}
+function markDirty(){ED.dirty=true;setStatus('');}
+function redraw(){renderNodes();renderEdges();applyPhase();renderStats();renderTables();}
+function undo(){if(!ED.hist.length)return;const s=JSON.parse(ED.hist.pop());DATA.nodes=s.nodes;DATA.edges=s.edges;
+  Object.keys(INFO).forEach(function(k){delete INFO[k];});ED.sel=-1;markDirty();redraw();syncEditBtns();}
+/* 端点が動いた線は手書きの拐点が合わなくなるので、自動の直角走线に戻す */
+function resetRoute(e){['via','mx','my','d1','d2','lx','ly','lp'].forEach(function(k){delete e[k];});}
+function nodeDown(e,n){
+  if(!ED.on||e.button!==0)return;e.stopPropagation();
+  const side=e.target.getAttribute&&e.target.getAttribute('data-side');
+  const p=toSvg(e);
+  if(side){ED.link={from:n.id+':'+side,sx:p.x,sy:p.y};
+    const a=port(ED.link.from);ED.link.sx=a.x;ED.link.sy=a.y;}
+  else if(e.target.getAttribute&&e.target.getAttribute('data-resize'))ED.drag={n:n,ow:n.w,px:p.x,py:p.y,moved:false,resize:true};
+  else ED.drag={n:n,ox:n.x,oy:n.y,px:p.x,py:p.y,moved:false};
+  window.addEventListener('pointermove',editMove);window.addEventListener('pointerup',editUp);
+}
+function editMove(e){
+  const p=toSvg(e);
+  if(ED.drag){const d=ED.drag;
+    if(!d.moved){if(Math.abs(p.x-d.px)+Math.abs(p.y-d.py)<4)return;d.moved=true;pushHist();
+      (DATA.edges||[]).forEach(function(ed){if(ed.from.split(':')[0]===d.n.id||ed.to.split(':')[0]===d.n.id)resetRoute(ed);});}
+    if(d.resize){const nw=Math.max(80,Math.min(CW-d.n.x,snap(d.ow+p.x-d.px)));
+      if(nw!==d.n.w){d.n.w=nw;renderNodes();renderEdges();}return;}
+    const nx=snap(d.ox+p.x-d.px),ny=snap(d.oy+p.y-d.py);
+    if(nx===d.n.x&&ny===d.n.y)return;
+    d.n.x=Math.max(0,Math.min(CW-d.n.w,nx));d.n.y=Math.max(0,Math.min(CH-d.n.h,ny));renderNodes();renderEdges();}
+  else if(ED.link){gTmp.innerHTML='';
+    gTmp.appendChild(el('path',{d:'M'+ED.link.sx+','+ED.link.sy+' L'+p.x+','+p.y,stroke:'#2563eb','stroke-width':1.8,'stroke-dasharray':'5 4',fill:'none'}));}
+}
+function editUp(e){
+  window.removeEventListener('pointermove',editMove);window.removeEventListener('pointerup',editUp);
+  if(ED.drag){if(ED.drag.moved){syncPhase(ED.drag.n);renderNodes();renderEdges();renderStats();renderTables();markDirty();ED.justDragged=true;setTimeout(function(){ED.justDragged=false;},0);applyPhase();}ED.drag=null;}
+  else if(ED.link){gTmp.innerHTML='';
+    const hitEl=document.elementFromPoint(e.clientX,e.clientY),g=hitEl&&hitEl.closest&&hitEl.closest('.ng');
+    const fromId=ED.link.from.split(':')[0];
+    if(g&&g.getAttribute('data-id')!==fromId){
+      const id=g.getAttribute('data-id'),n=N[id],p=toSvg(e);
+      let side=hitEl.getAttribute('data-side');
+      if(!side){const dx=(p.x-n.cx)/n.w,dy=(p.y-n.cy)/n.h;side=Math.abs(dx)>Math.abs(dy)?(dx<0?'l':'r'):(dy<0?'t':'b');}
+      pushHist();(DATA.edges=DATA.edges||[]).push({from:ED.link.from,to:id+':'+side});
+      ED.sel=DATA.edges.length-1;markDirty();renderEdges();syncEditBtns();
+      ED.justDragged=true;setTimeout(function(){ED.justDragged=false;},0);
+    }
+    ED.link=null;}
+}
+function selectEdge(i){ED.sel=i;renderEdges();syncEditBtns();}
+function selEdge(){return ED.sel>=0?DATA.edges[ED.sel]:null;}
+function delEdge(){if(!selEdge())return;pushHist();DATA.edges.splice(ED.sel,1);ED.sel=-1;markDirty();renderEdges();syncEditBtns();}
+function toggleEdge(k){const e=selEdge();if(!e)return;pushHist();
+  if(k==='dash'){e.dash=!e.dash;if(e.dash)delete e.bold;}else{e.bold=!e.bold;if(e.bold)delete e.dash;}
+  if(!e.dash)delete e.dash;if(!e.bold)delete e.bold;markDirty();renderEdges();}
+function editLabel(){const e=selEdge();if(!e)return;const v=window.prompt(L.labelPrompt,e.label||'');if(v===null)return;
+  pushHist();if(v.trim()){e.label=v.trim();}else delete e.label;delete e.lx;delete e.ly;delete e.lp;markDirty();renderEdges();}
+function download(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);}
+function save(){
+  const text=JSON.stringify(DATA,null,2)+'\n';
+  const page=decodeURIComponent(location.pathname.split('/').pop()||'diagram.html');
+  fetch('/__save?page='+encodeURIComponent(page),{method:'POST',headers:{'Content-Type':'application/json'},body:text})
+    .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+    .then(function(res){ED.dirty=false;
+      if(res.warnings&&res.warnings.length){console.warn(res.warnings.join('\n'));setStatus(fmt(L.savedWarn,res.warnings.length));}
+      else setStatus(L.saved);})
+    .catch(function(){download(page.replace(/\.html?$/,'')+'.data.json',text);ED.dirty=false;setStatus(L.saveFail,true);});
+}
+document.addEventListener('keydown',function(e){
+  if(!ED.on)return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
+  else if((e.key==='Delete'||e.key==='Backspace')&&ED.sel>=0&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delEdge();}
+});
+window.addEventListener('beforeunload',function(e){if(ED.dirty){e.preventDefault();e.returnValue=L.leave;}});
 
 /* ---------- toolbar ---------- */
 const tools=$('tools');
@@ -373,20 +573,57 @@ function sep(){const s=document.createElement('div');s.className='sep';tools.app
 const navBtns=[];
 function nav(label,fn,pri){const b=btn(label,function(){fn();navBtns.forEach(function(o){o.classList.remove('pri');});b.classList.add('pri');},pri?'pri':'');navBtns.push(b);}
 nav(L.fitw,fitWidth,true);nav(L.all,fitAll);
-if(DATA.bands&&DATA.bands.length){sep();DATA.bands.forEach(function(b){nav(b.label,function(){showRect(b.rect);});});}
-sep();btn('＋',function(){zoomAt(1/1.25,VB.x+VB.w/2,VB.y+VB.h/2);});btn('−',function(){zoomAt(1.25,VB.x+VB.w/2,VB.y+VB.h/2);});
-let phaseOn=false,phaseBtn=null;
+const FOCUS=!!(PH&&PH.focusButtons);
+if(!FOCUS&&DATA.bands&&DATA.bands.length){sep();DATA.bands.forEach(function(b){nav(b.label,function(){showRect(b.rect);});});}
+function zoomCenter(f){const off=Math.max(0,(bw()-CW*Z)/2);zoomAt(f,(board.scrollLeft+bw()/2-off)/Z,(board.scrollTop+bh()/2)/Z);}
+sep();btn('＋',function(){zoomCenter(1/1.25);});btn('−',function(){zoomCenter(1.25);});
+let phaseOn=false,phaseBtn=null,focusLevel=null;
+/* 强调某一期：该期方块保持原样，其余变淡（phase.focusButtons） */
 function applyPhase(){
   const dim=(PH&&PH.dim)||[];
-  Object.keys(GEL).forEach(function(k){const n=INFO[k];GEL[k].style.opacity=(phaseOn&&n.phase&&dim.indexOf(n.phase.level)>=0)?.14:1;});
-  gEdge.style.opacity=phaseOn?.35:1;
+  Object.keys(GEL).forEach(function(k){const n=INFO[k],lv=n.phase&&n.phase.level;
+    const faded=focusLevel?lv!==focusLevel:(phaseOn&&lv&&dim.indexOf(lv)>=0);
+    GEL[k].style.opacity=faded?.14:1;});
+  gEdge.style.opacity=(phaseOn||focusLevel)?.35:1;
 }
-if(PH&&PH.dim&&PH.dim.length){sep();phaseBtn=btn(fmt(L.toggleOn,PH.label),function(){
+if(FOCUS){sep();const fbtns=[];
+  (PH.levels||[]).forEach(function(lv){
+    const b=btn(fmt(L.focus,prettyKey(lv.key)),function(){
+      focusLevel=focusLevel===lv.key?null:lv.key;
+      fbtns.forEach(function(o){o.classList.toggle('pri',o===b&&focusLevel===lv.key);});
+      if(cur){cur.classList.remove('sel');cur=null;document.body.classList.remove('open');}applyPhase();});
+    b.style.borderLeft='4px solid '+(lv.color||'#8b95a3');fbtns.push(b);
+  });
+}
+if(!FOCUS&&PH&&PH.dim&&PH.dim.length){sep();phaseBtn=btn(fmt(L.toggleOn,PH.label),function(){
   phaseOn=!phaseOn;phaseBtn.classList.toggle('pri',phaseOn);phaseBtn.textContent=phaseOn?L.toggleOff:fmt(L.toggleOn,PH.label);
   if(cur){cur.classList.remove('sel');cur=null;document.body.classList.remove('open');}applyPhase();});}
 const tip=document.createElement('span');tip.className='tip';tip.textContent=L.tip;tools.appendChild(tip);
 fitWidth();requestAnimationFrame(fitWidth);window.addEventListener('load',fitWidth);
-let rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){VB.h=ratioH(VB.w);clampVB();setVB();},120);});
+
+/* edit toolbar */
+const etools=$('edittools');
+const EDITABLE=!!DATA.editable;
+if(!EDITABLE)etools.remove();
+function ebtn(label,fn){if(!EDITABLE)return document.createElement('button');const b=document.createElement('button');b.textContent=label;b.addEventListener('click',fn);etools.appendChild(b);return b;}
+const editBtn=EDITABLE&&ebtn(L.edit,function(){
+  ED.on=!ED.on;ED.sel=-1;document.body.classList.toggle('editing',ED.on);
+  editBtn.textContent=ED.on?L.editDone:L.edit;editBtn.classList.toggle('edit-on',ED.on);
+  $('hint').textContent=ED.on?L.editHint:(meta.hint||L.hint);
+  if(cur)close();redraw();syncEditBtns();
+});
+const EB={undo:ebtn(L.undo,undo),del:ebtn(L.delEdge,delEdge),dash:ebtn(L.dash,function(){toggleEdge('dash');}),
+  bold:ebtn(L.bold,function(){toggleEdge('bold');}),label:ebtn(L.label,editLabel),save:ebtn(L.save,save)};
+EB.save.className='pri';
+const status=document.createElement('span');status.className='status';etools.appendChild(status);
+function setStatus(t,isErr){status.textContent=t||'';status.classList.toggle('err',!!isErr);}
+function syncEditBtns(){
+  if(!EDITABLE)return;
+  Object.keys(EB).forEach(function(k){EB[k].hidden=!ED.on;});
+  const s=ED.sel>=0;[EB.del,EB.dash,EB.bold,EB.label].forEach(function(b){b.disabled=!s;});
+  EB.undo.disabled=!ED.hist.length;
+}
+syncEditBtns();
 
 /* ---------- legends ---------- */
 const usedCats={};(DATA.nodes||[]).forEach(function(n){if(n.cat)usedCats[n.cat]=1;});
@@ -402,18 +639,106 @@ if(DATA.tagLegend){ex+=(ex?'<span>｜</span>':'')+'<span>'+esc(L.tagLegend)+'</s
   return '<span><span class="tagchip">'+esc(k)+'</span>'+esc(DATA.tagLegend[k])+'</span>';}).join('');}
 if(ex)$('extralegend').innerHTML=ex;else $('extralegend').remove();
 
+/* ---------- phase stats (derived from node positions & panel data) ---------- */
+function strip(s){return String(s==null?'':s).replace(/<[^>]*>/g,'').trim();}
+function phaseLevels(){return (PH&&PH.levels)||[];}
+function phaseCol(n){const T=DATA.timeline;return T?Math.floor((n.x+n.w/2-T.x0)/T.colW):-1;}
+/* 方块所在的时间轴列决定它属于第几期（拖动后自动更新） */
+function prettyKey(k){return String(k).replace(/^第\s*(\d+)\s*期$/,'第 $1 期');}
+function syncPhase(n){
+  if(!PH||!PH.byColumn||!DATA.timeline||!n.phase)return;
+  const lv=phaseLevels()[phaseCol(n)];if(!lv||lv.key===n.phase.level)return;
+  const old=n.phase.level;n.phase.level=lv.key;
+  /* 副标题原本就是期名时才跟着改，避免覆盖自定义副标题 */
+  if(n.s===old||n.s===prettyKey(old))n.s=prettyKey(lv.key);
+}
+function periodOf(i){const T=DATA.timeline,lv=phaseLevels()[i];if(!T||!T.labels[i])return '';
+  return String(T.labels[i]).replace(lv?lv.key:'','').trim();}
+function screensOf(n){
+  const out=[],re=/<tr><td[^>]*>([\s\S]*?)<\/td><td[^>]*>([\s\S]*?)<\/td>/g;let m;
+  const mark=(DATA.stats&&DATA.stats.newMark)||L.newMark;
+  while((m=re.exec(n.io||''))){const nm=strip(m[2]),isNew=nm.indexOf(mark)>=0;
+    out.push({side:strip(m[1]),name:isNew?nm.replace(new RegExp('[（(]?\\s*'+mark.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[）)]?$'),'').trim():nm,isNew:isNew});}
+  return out;
+}
+function effortOf(n){const key=(DATA.stats&&DATA.stats.effortKey)||L.effortKey;const r=(n.kv||[]).find(function(k){return k[0]===key;});const m=r&&String(r[1]).match(/([\d.]+)/);return m?parseFloat(m[1]):0;}
+function nodesOfLevel(key){
+  return (DATA.nodes||[]).filter(function(n){return n.phase&&n.phase.level===key;})
+    .sort(function(a,b){return a.y-b.y||a.x-b.x;});
+}
+function phaseStats(){
+  return phaseLevels().map(function(lv,i){
+    const ns=nodesOfLevel(lv.key),seen={};let screens=0,fresh=0,effort=0;
+    ns.forEach(function(n){effort+=effortOf(n);screensOf(n).forEach(function(s){const k=s.side+'|'+s.name;if(seen[k])return;seen[k]=1;screens++;if(s.isNew)fresh++;});});
+    return {lv:lv,i:i,nodes:ns,screens:screens,fresh:fresh,effort:Math.round(effort*10)/10,period:periodOf(i)};
+  });
+}
+function fmtNum(v){return (Math.round(v*10)/10).toString();}
+
+/* ---------- workload chart ---------- */
+const statsWrap=$('stats');
+function renderStats(){
+  if(!statsWrap)return;
+  if(!DATA.stats||!PH){statsWrap.remove();return;}
+  const S=phaseStats(),W=760,H=250,pl=44,pr=16,pt=26,pb=48;
+  const maxV=Math.max(1,Math.max.apply(null,S.map(function(s){return s.screens;})));
+  const step=maxV<=10?2:maxV<=25?5:maxV<=60?10:20,top=Math.ceil(maxV/step)*step;
+  const iw=W-pl-pr,ih=H-pt-pb,slot=iw/S.length,bwid=Math.min(56,slot*0.46);
+  let g='';
+  for(let v=0;v<=top;v+=step){const y=pt+ih-ih*v/top;
+    g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="'+(v?'#eef1f6':'#c9d1dc')+'"/>'+
+       '<text x="'+(pl-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="#6b7585">'+v+'</text>';}
+  S.forEach(function(s){
+    const cx=pl+slot*(s.i+.5),h=ih*s.screens/top,x=cx-bwid/2,y=pt+ih-h,r=Math.min(4,h/2);
+    const col=s.lv.color||'#2563eb';
+    if(s.screens>0)g+='<path d="M'+x+','+(pt+ih)+' V'+(y+r)+' Q'+x+','+y+' '+(x+r)+','+y+' H'+(x+bwid-r)+' Q'+(x+bwid)+','+y+' '+(x+bwid)+','+(y+r)+' V'+(pt+ih)+' Z" fill="'+col+'"/>';
+    g+='<text x="'+cx+'" y="'+(y-7)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#1b2330">'+s.screens+'</text>';
+    g+='<text x="'+cx+'" y="'+(pt+ih+17)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#33404f">'+esc(s.lv.key)+'</text>';
+    g+='<text x="'+cx+'" y="'+(pt+ih+33)+'" text-anchor="middle" font-size="10.5" fill="#6b7585">'+esc(s.period)+'</text>';
+    g+='<rect class="hit" data-i="'+s.i+'" x="'+(pl+slot*s.i)+'" y="'+pt+'" width="'+slot+'" height="'+ih+'" fill="transparent"/>';
+  });
+  statsWrap.innerHTML='<h3>'+esc(DATA.stats.title||'')+'</h3>'+(DATA.stats.caption?'<p class="cap">'+DATA.stats.caption+'</p>':'')+
+    '<div class="chartbox"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(DATA.stats.title||'')+'">'+
+    '<text x="'+pl+'" y="12" font-size="11" fill="#6b7585">'+esc((DATA.stats&&DATA.stats.yLabel)||L.chartY)+'</text>'+g+'</svg><div class="ctip" hidden></div></div>';
+  const tipEl=statsWrap.querySelector('.ctip'),box=statsWrap.querySelector('.chartbox');
+  statsWrap.querySelectorAll('.hit').forEach(function(rc){
+    rc.addEventListener('mousemove',function(ev){const s=S[+rc.getAttribute('data-i')],br=box.getBoundingClientRect();
+      tipEl.innerHTML='<b>'+esc(s.lv.key)+'</b>　'+esc(s.period)+'<br>'+esc(L.tipScreens)+'　<b>'+s.screens+'</b>（'+esc(L.tipNew)+' '+s.fresh+'）<br>'+esc(L.tipFeatures)+'　'+s.nodes.length+'<br>'+esc(L.tipEffort)+'　'+esc(fmt(L.effortFmt,fmtNum(s.effort)))+(s.lv.effort?'<br>'+esc(L.tipActual)+'　'+esc(s.lv.effort):'');
+      tipEl.hidden=false;tipEl.style.left=Math.min(br.width-190,ev.clientX-br.left+14)+'px';tipEl.style.top=(ev.clientY-br.top+10)+'px';});
+    rc.addEventListener('mouseleave',function(){tipEl.hidden=true;});
+  });
+}
+
 /* ---------- tables ---------- */
 const tbWrap=$('tables');
 function rowClick(root){root.querySelectorAll('tr[data-go]').forEach(function(tr){tr.addEventListener('click',function(){
   const id=tr.getAttribute('data-go');if(!GEL[id]&&!N[id])return;if(GEL[id])open(id);centerOn(id);
   document.querySelector('.board').scrollIntoView({behavior:'smooth',block:'center'});});});}
+function groupIds(g){return g.level?nodesOfLevel(g.level).map(function(n){return n.id;}):(g.ids||[]);}
+function groupLabel(g){
+  if(g.label)return g.label;const i=phaseLevels().findIndex(function(l){return l.key===g.level;});const lv=phaseLevels()[i];
+  return lv?lv.key+'｜'+(lv.goal||'')+'（'+periodOf(i)+'）':'';
+}
+function renderTables(){
+tbWrap.innerHTML='';
 (DATA.tables||[]).forEach(function(tb){
   const box=document.createElement('div');box.className='mx';
   let h='<h3>'+esc(tb.title||'')+'</h3>'+(tb.caption?'<p class="cap">'+tb.caption+'</p>':'');
-  if(tb.type==='phase'){
+  if(tb.type==='phaseSummary'){
+    const C=tb.columns||L.sumCols;
+    h+='<table><thead><tr>'+C.map(function(c,i){return '<th'+(i>=3&&i<=5?' class="c"':'')+'>'+c+'</th>';}).join('')+'</tr></thead><tbody>';
+    phaseStats().forEach(function(s){
+      const go=s.nodes[0]?' data-go="'+esc(s.nodes[0].id)+'"':'';
+      h+='<tr'+go+'><td class="svc"><b style="color:'+(s.lv.color||'#333')+'">'+esc(s.lv.key)+'</b></td><td>'+esc(s.period)+'</td><td>'+esc(s.lv.goal||'')+'</td>'+
+        '<td class="c">'+s.nodes.length+'</td><td class="c">'+s.screens+'（'+s.fresh+'）</td>'+
+        '<td class="c">'+esc(s.lv.effort||'—')+' / '+esc(fmt(L.effortFmt,fmtNum(s.effort)))+'</td>'+
+        '<td>'+(s.nodes.map(function(n){return esc(n.t||n.id);}).join('、')||'—')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }else if(tb.type==='phase'){
     h+='<table><thead><tr><th style="width:240px">'+esc(tb.columns?tb.columns[0]:L.component)+'</th><th style="width:90px">'+esc(tb.columns?tb.columns[1]:L.level)+'</th><th>'+esc(tb.columns?tb.columns[2]:L.detail)+'</th></tr></thead><tbody>';
-    (tb.groups||[]).forEach(function(g){h+='<tr class="grp"><td colspan="3">'+esc(g.label)+'</td></tr>';
-      g.ids.forEach(function(id){const n=INFO[id];if(!n||!n.phase)return;
+    (tb.groups||[]).forEach(function(g){h+='<tr class="grp"><td colspan="3">'+esc(groupLabel(g))+'</td></tr>';
+      groupIds(g).forEach(function(id){const n=INFO[id];if(!n||!n.phase)return;
         h+='<tr data-go="'+esc(id)+'"><td class="svc">'+esc(n.t||id)+'</td><td><b style="color:'+(PHC[n.phase.level]||'#333')+'">'+esc(n.phase.level)+'</b></td><td>'+(n.phase.text||'')+'</td></tr>';});});
     h+='</tbody></table>';
   }else if(tb.type==='uses'){
@@ -434,6 +759,8 @@ function rowClick(root){root.querySelectorAll('tr[data-go]').forEach(function(tr
   }
   box.innerHTML=h;tbWrap.appendChild(box);rowClick(box);
 });
+}
+renderStats();renderTables();
 
 /* ---------- notes ---------- */
 const nWrap=$('notes');
