@@ -7,7 +7,9 @@ A Claude Code skill that turns **architecture diagrams, process flows, developme
 | Item | Description |
 | --- | --- |
 | Output | One HTML file with no external dependencies, so you can email it or drop it on a shared drive as is, plus a data JSON for later edits |
-| Interaction | Click a block to open a details panel on the right. Drag to pan, Ctrl + wheel to zoom. Toggle a phase scope (M0 / PoC, P0 / P1, and so on). Click a table row to jump to its block in the diagram |
+| Interaction | Click a block to open a details panel on the right. Drag to pan, Ctrl + wheel to zoom. Toggle a phase scope (M0 / PoC, P0 / P1, and so on). Click a table row to jump to its block in the diagram. Scrollbars appear when the diagram does not fit |
+| Editing (optional) | Drag blocks, resize width, draw / delete lines and undo in the browser, then save back to the data JSON through a local server |
+| Workload stats (optional) | For development plans: features, screens and estimated effort per phase, shown as a bar chart and an auto-generated phase summary table |
 | Use cases | System / environment architecture, process flows, development plans (timeline + milestones), business flows (swimlanes), organization charts |
 | Quality checks | The build script detects overlapping nodes, edges that pass through nodes, text overflow, and broken ID references. It refuses to overwrite existing files by default |
 | Requirements | Node.js 18 or later. No third-party npm packages |
@@ -56,7 +58,7 @@ After installing, just ask Claude Code. For example:
 
 The skill works through these steps and checks with you at each one:
 
-1. Confirms the scenario: diagram type, page language, and whether a phase scope is needed. If you point it to existing material, it reads that first
+1. Confirms the scenario: diagram type, page language, whether a phase scope is needed, and whether you want to edit the layout in the browser. If you point it to existing material, it reads that first
 2. Asks the key questions for that scenario, at most 4 per round
 3. Presents an outline (groups, node list, main connections) for you to confirm
 4. Writes the data JSON, builds the HTML, and fixes issues until there are 0 errors and 0 warnings
@@ -87,6 +89,9 @@ skills/interactive-diagram-html/
   assets/engine.html                     Interaction engine (panel, pan / zoom, tables, legends)
   assets/examples/*.json                 Sample data (timeline type / container type)
   scripts/build.mjs                      Validation + generation, no dependencies
+  scripts/serve.mjs                      Local preview + save server for editing mode
+  scripts/route-block.js                 Routing algorithm source (injected by sync-route.mjs)
+  scripts/test-route.mjs                 Routing regression test (all port combinations)
   references/data-schema.md              Data format
   references/scenarios.md                Recommended structure and question list per scenario
   references/layout-guide.md             Coordinates, edge routing, how to fix each warning
