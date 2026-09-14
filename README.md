@@ -1,103 +1,103 @@
 # interactive-diagram-html
 
-中文 | [日本語](README.ja.md) | [English](README.en.md)
+English | [日本語](README.ja.md) | [中文](README.zh.md)
 
-在对话中把**构成图、流程图、开发计划**等生成为可点击查看说明的单文件交互式 HTML。
+A Claude Code skill that turns **architecture diagrams, process flows, development plans** and similar documents into single-file interactive HTML through a guided conversation. Every block in the diagram can be clicked to open its details.
 
-| 项 | 说明 |
+| Item | Description |
 | --- | --- |
-| 产出 | 单个 HTML 文件和一份数据 JSON。HTML 不依赖任何外部资源，可以直接用邮件发送或放到共享盘；数据 JSON 用于后续修改 |
-| 交互 | 点击方块，右侧打开说明面板；拖拽平移，Ctrl + 滚轮缩放，图放不下时出现滚动条；阶段范围开关（M0 / PoC、P0 / P1 等）；点击一览表的行，图会定位到对应方块 |
-| 编辑（可选） | 开启后可在浏览器里拖动方块、调整宽度、画 / 删连线、撤销，并经本地服务保存回数据 JSON |
-| 工作量统计（可选） | 开发计划按期统计机能数、画面数、换算工数，顶部柱形图 + 自动生成的阶段概要表 |
-| 场景 | 系统 / 环境构成图、处理流程图、开发计划（时间轴 + 里程碑）、业务流程（泳道）、组织体制图 |
-| 质量保障 | 构建脚本会检查节点重叠、连线穿过节点、文字溢出和 ID 引用错误，并默认拒绝覆盖已有文件 |
-| 依赖 | Node.js ≥ 18，不需要第三方 npm 包 |
+| Output | One HTML file with no external dependencies, so you can email it or drop it on a shared drive as is, plus a data JSON for later edits |
+| Interaction | Click a block to open a details panel on the right. Drag to pan, Ctrl + wheel to zoom. Toggle a phase scope (M0 / PoC, P0 / P1, and so on). Click a table row to jump to its block in the diagram. Scrollbars appear when the diagram does not fit |
+| Editing (optional) | Drag blocks, resize width, draw / delete lines and undo in the browser, then save back to the data JSON through a local server |
+| Workload stats (optional) | For development plans: features, screens and estimated effort per phase, shown as a bar chart and an auto-generated phase summary table |
+| Use cases | System / environment architecture, process flows, development plans (timeline + milestones), business flows (swimlanes), organization charts |
+| Quality checks | The build script detects overlapping nodes, edges that pass through nodes, text overflow, and broken ID references. It refuses to overwrite existing files by default |
+| Requirements | Node.js 18 or later. No third-party npm packages |
 
-## 示例
+## Examples
 
-| 文件 | 内容 |
+| File | Contents |
 | --- | --- |
-| [examples/dev-plan.html](examples/dev-plan.html) | 开发计划：6 个 Sprint、6 条泳道、4 个里程碑、关键路径、P0 / P1 / P2 范围开关、功能一览表 |
-| [examples/system-architecture.html](examples/system-architecture.html) | 系统构成：容器布局、存储关联圆点、组件 × 存储矩阵、M0 / PoC 开关 |
+| [examples/dev-plan.html](examples/dev-plan.html) | Development plan: 6 sprints, 6 lanes, 4 milestones, critical path, P0 / P1 / P2 scope toggle, feature list |
+| [examples/system-architecture.html](examples/system-architecture.html) | System architecture: container layout, store-usage dots, component × store matrix, M0 / PoC toggle |
 
-GitHub 不会渲染 HTML 预览，请下载后用浏览器打开。
+GitHub does not preview HTML files. Download them and open them in a browser.
 
-## 安装
+## Installation
 
-### Claude Code（插件市场）
+### Claude Code (plugin marketplace)
 
 ```
 /plugin marketplace add XuGuanghaiGoogle/interactive-diagram-html
 /plugin install interactive-diagram-html@interactive-diagram-html
 ```
 
-也可以把本地目录作为市场源：`/plugin marketplace add C:\path\to\interactive-diagram-html`。
-更新：`/plugin marketplace update interactive-diagram-html`。
+You can also register a local directory as the marketplace: `/plugin marketplace add C:\path\to\interactive-diagram-html`.
+To update: `/plugin marketplace update interactive-diagram-html`.
 
-### 手动安装（个人 skill）
+### Manual installation (personal skill)
 
-把 `skills/interactive-diagram-html/` 复制到 `~/.claude/skills/` 下（Windows 为 `%USERPROFILE%\.claude\skills\`）。
+Copy `skills/interactive-diagram-html/` into `~/.claude/skills/` (on Windows, `%USERPROFILE%\.claude\skills\`).
 
-### Codex / 其他 agent
+### Codex / other agents
 
-| 范围 | 做法 |
+| Scope | How |
 | --- | --- |
-| 单个项目 | 把 `skills/interactive-diagram-html/` 复制到该项目的 `.agents/skills/`，并在项目的 AGENTS.md 中登记 |
-| 全局 | 克隆到固定路径，用绝对路径调用 `scripts/build.mjs` |
+| Single project | Copy `skills/interactive-diagram-html/` into the project's `.agents/skills/` and register it in the project's AGENTS.md |
+| Global | Clone this repository to a fixed path and call `scripts/build.mjs` by its absolute path |
 
-agent 的行为指令见 [AGENTS.md](AGENTS.md) 和 [SKILL.md](skills/interactive-diagram-html/SKILL.md)。
+Instructions for agents are in [AGENTS.md](AGENTS.md) and [SKILL.md](skills/interactive-diagram-html/SKILL.md).
 
-## 使用方法
+## Usage
 
-安装后，在 Claude Code 里直接说出需求即可，例如：
+After installing, just ask Claude Code. For example:
 
-- 「把这个仓库的系统做成构成图 HTML，标出 PoC 范围」
-- 「根据 docs/requirements.md 做一份开发计划，10 月开始，两周一个 Sprint」
-- 「把报销审批流程画成泳道图，角色有申请人、主管、财务」
+- "Turn this repository's system into an architecture diagram HTML, and mark the PoC scope."
+- "Create a development plan from docs/requirements.md. Start in October, two-week sprints."
+- "Draw the expense approval flow as a swimlane diagram. Roles: applicant, manager, finance."
 
-skill 会按以下顺序推进，每一步都会征求你的确认：
+The skill works through these steps and checks with you at each one:
 
-1. 确认场景：选择图的类型、页面语言，确认是否需要阶段范围、是否需要在浏览器里编辑，并读取你提供的素材
-2. 按场景追问关键信息，每轮最多 4 个问题
-3. 给出大纲（分组、节点清单、主要连线），请你确认
-4. 生成数据 JSON，构建 HTML 并校验到 0 错误、0 警告
-5. 报告文件路径和待定事项
+1. Confirms the scenario: diagram type, page language, whether a phase scope is needed, and whether you want to edit the layout in the browser. If you point it to existing material, it reads that first
+2. Asks the key questions for that scenario, at most 4 per round
+3. Presents an outline (groups, node list, main connections) for you to confirm
+4. Writes the data JSON, builds the HTML, and fixes issues until there are 0 errors and 0 warnings
+5. Reports the file paths and any open items
 
-之后想修改时，直接说「把 ○○ 改成 △△」。skill 会修改数据 JSON，然后重新生成同一个 HTML。
+To change something later, just say "change X to Y". The skill edits the data JSON and rebuilds the same HTML.
 
-## 命令行（不经过 agent）
+## Command line (without an agent)
 
 ```bash
 node skills/interactive-diagram-html/scripts/build.mjs my-plan.data.json my-plan.html --strict
 ```
 
-| 参数 | 说明 |
+| Option | Description |
 | --- | --- |
-| `--strict` | 把警告也视为失败，交付前建议使用 |
-| `--check` | 只校验，不生成文件 |
-| `--force` | 允许覆盖已存在的输出文件；不加时脚本拒绝覆盖 |
+| `--strict` | Treats warnings as failures. Recommended before delivery |
+| `--check` | Validates only; does not write a file |
+| `--force` | Allows overwriting an existing output file. Without it, the script refuses to overwrite |
 
-数据格式见 [references/data-schema.md](skills/interactive-diagram-html/references/data-schema.md)，布局和走线的写法见 [references/layout-guide.md](skills/interactive-diagram-html/references/layout-guide.md)。可以从 `assets/examples/` 里的示例改起。
+See [references/data-schema.md](skills/interactive-diagram-html/references/data-schema.md) for the data format and [references/layout-guide.md](skills/interactive-diagram-html/references/layout-guide.md) for coordinates and edge routing. The quickest way to start is to copy one of the samples in `assets/examples/`.
 
-## 目录结构
+## Repository layout
 
 ```
-.claude-plugin/marketplace.json          Claude Code 插件市场清单
+.claude-plugin/marketplace.json          Claude Code plugin marketplace manifest
 skills/interactive-diagram-html/
-  SKILL.md                               agent 行为指令（交互流程、内容要求）
-  assets/engine.html                     交互引擎（面板、平移缩放、表格、图例）
-  assets/examples/*.json                 示例数据（时间轴型 / 容器型）
-  scripts/build.mjs                      校验 + 生成，零依赖
-  scripts/serve.mjs                      编辑模式用的本地预览 + 保存服务
-  scripts/route-block.js                 走线算法正本（sync-route.mjs 注入引擎与 build.mjs）
-  scripts/test-route.mjs                 走线回归测试（全部端口组合）
-  references/data-schema.md              数据格式
-  references/scenarios.md                各场景的推荐结构与追问清单
-  references/layout-guide.md             坐标、走线、校验警告对照
-examples/*.html                          示例成品
+  SKILL.md                               Agent instructions (conversation flow, content standards)
+  assets/engine.html                     Interaction engine (panel, pan / zoom, tables, legends)
+  assets/examples/*.json                 Sample data (timeline type / container type)
+  scripts/build.mjs                      Validation + generation, no dependencies
+  scripts/serve.mjs                      Local preview + save server for editing mode
+  scripts/route-block.js                 Routing algorithm source (injected by sync-route.mjs)
+  scripts/test-route.mjs                 Routing regression test (all port combinations)
+  references/data-schema.md              Data format
+  references/scenarios.md                Recommended structure and question list per scenario
+  references/layout-guide.md             Coordinates, edge routing, how to fix each warning
+examples/*.html                          Finished samples
 ```
 
-## 许可
+## License
 
 MIT

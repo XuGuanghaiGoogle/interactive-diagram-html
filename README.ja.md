@@ -1,6 +1,6 @@
 # interactive-diagram-html
 
-[中文](README.md) | 日本語 | [English](README.en.md)
+[English](README.md) | 日本語 | [中文](README.zh.md)
 
 **構成図・フロー図・開発計画**などを、対話を通じて「クリックで説明が開く」単一ファイルのインタラクティブ HTML にまとめる Claude Code スキルです。
 
