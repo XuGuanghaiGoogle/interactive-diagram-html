@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>interactive-diagram-html — Live demos</title>
+<meta name="description" content="Claude Code skill that turns architecture diagrams, process flows and development plans into single-file interactive HTML through a guided conversation.">
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#18202c; --muted:#5b6574; --line:#e1e5ec;
+    --accent:#2563eb; --accent-ink:#1d4ed8; --code:#eef1f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1319; --card:#171c24; --ink:#e6eaf0; --muted:#9aa4b2; --line:#2a313c;
+           --accent:#6ea0ff; --accent-ink:#8fb5ff; --code:#212833; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.6}
+  a{color:var(--accent-ink)}
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 22px 64px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px;font-size:14px}
+  .top .name{font-weight:700;letter-spacing:.01em}
+  .top nav a{margin-left:16px;text-decoration:none}
+  h1{font-size:clamp(28px,4.2vw,42px);line-height:1.2;margin:0 0 14px;letter-spacing:-.01em}
+  .lead{font-size:17px;color:var(--muted);max-width:760px;margin:0 0 10px}
+  .langs{font-size:14px;color:var(--muted);margin:0 0 26px}
+  .cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:44px}
+  .btn{display:inline-block;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+  h2{font-size:20px;margin:0 0 14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:44px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:border-color .15s, transform .15s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .thumb{height:120px;border-radius:9px;background:var(--code);margin-bottom:14px;overflow:hidden}
+  .thumb svg{width:100%;height:100%;display:block}
+  .card h3{margin:0 0 6px;font-size:16px}
+  .card p{margin:0 0 12px;color:var(--muted);font-size:14px;flex:1}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:12px;border:1px solid var(--line);border-radius:20px;padding:1px 9px;color:var(--muted)}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px 26px;margin:0 0 44px;padding:0;list-style:none}
+  .feat li b{display:block;margin-bottom:2px}
+  .feat li span{color:var(--muted);font-size:14px}
+  pre{background:var(--code);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:13.5px;margin:0 0 12px}
+  code{font-family:ui-monospace,Consolas,Menlo,monospace}
+  .note{font-size:13.5px;color:var(--muted)}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="name">interactive-diagram-html</span>
+    <nav>
+      <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html">GitHub</a>
+      <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html/blob/main/README.ja.md">日本語</a>
+      <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html/blob/main/README.zh.md">中文</a>
+    </nav>
+  </div>
+
+  <h1>Diagrams you can click, read and rearrange</h1>
+  <p class="lead">A Claude Code skill that turns architecture diagrams, process flows and development plans into a single interactive HTML file through a guided conversation. Click any block to read its role, functions and scope; drag blocks and draw lines when you want to adjust the layout yourself.</p>
+  <p class="langs">The demos below are in Japanese. Pages can be generated in English, Japanese or Chinese.</p>
+  <div class="cta">
+    <a class="btn pri" href="examples/dev-plan-editable.html">Try the editor demo</a>
+    <a class="btn" href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html">View on GitHub</a>
+  </div>
+
+  <h2>Live demos</h2>
+  <div class="grid">
+    <a class="card" href="examples/system-architecture.html">
+      <div class="thumb" aria-hidden="true">
+        <svg viewBox="0 0 300 120">
+          <rect x="10" y="12" width="70" height="96" rx="7" fill="none" stroke="#68758a" stroke-dasharray="4 3"/>
+          <rect x="95" y="12" width="130" height="58" rx="7" fill="none" stroke="#ED7100"/>
+          <rect x="95" y="78" width="130" height="30" rx="7" fill="none" stroke="#C925D1"/>
+          <rect x="18" y="30" width="54" height="18" rx="4" fill="#eef1f5" stroke="#68758a"/>
+          <rect x="105" y="24" width="50" height="16" rx="4" fill="#fff1e3" stroke="#ED7100"/>
+          <rect x="165" y="24" width="50" height="16" rx="4" fill="#fff1e3" stroke="#ED7100"/>
+          <rect x="105" y="48" width="50" height="16" rx="4" fill="#ffedf0" stroke="#DD344C"/>
+          <ellipse cx="130" cy="93" rx="18" ry="8" fill="#fdeafe" stroke="#C925D1"/>
+          <ellipse cx="190" cy="93" rx="18" ry="8" fill="#fdeafe" stroke="#C925D1"/>
+          <rect x="240" y="30" width="50" height="18" rx="4" fill="#eef1f5" stroke="#68758a"/>
+          <path d="M72 39 H105 M155 32 H165 M240 39 H215" stroke="#5a6472" fill="none"/>
+        </svg>
+      </div>
+      <h3>System architecture</h3>
+      <p>Container layout with storage relations, a component × store matrix and an M0 / PoC scope toggle.</p>
+      <div class="tags"><span class="tag">Container</span><span class="tag">View only</span></div>
+    </a>
+    <a class="card" href="examples/dev-plan.html">
+      <div class="thumb" aria-hidden="true">
+        <svg viewBox="0 0 300 120">
+          <g stroke="#cfd6e0" stroke-dasharray="3 3"><path d="M60 8 V114 M120 8 V114 M180 8 V114 M240 8 V114"/></g>
+          <rect x="66" y="16" width="48" height="14" rx="3" fill="#eaf3fd" stroke="#0078D4"/>
+          <rect x="126" y="40" width="102" height="14" rx="3" fill="#fff1e3" stroke="#ED7100"/>
+          <rect x="186" y="64" width="48" height="14" rx="3" fill="#e9f7f0" stroke="#13A10E"/>
+          <rect x="246" y="88" width="46" height="14" rx="3" fill="#eef1fb" stroke="#5C6BC0"/>
+          <path d="M114 23 H120 V47 H126 M228 47 H232 V71 H234 M234 71 H240 V95 H246" stroke="#c2410c" stroke-width="1.6" fill="none"/>
+          <polygon points="150,6 158,12 150,18 142,12" fill="#f3ecfb" stroke="#7c3aed"/>
+        </svg>
+      </div>
+      <h3>Development plan</h3>
+      <p>Six sprints on a timeline, swim lanes, milestones, the critical path and a P0 / P1 / P2 release scope toggle.</p>
+      <div class="tags"><span class="tag">Timeline</span><span class="tag">View only</span></div>
+    </a>
+    <a class="card" href="examples/dev-plan-editable.html">
+      <div class="thumb" aria-hidden="true">
+        <svg viewBox="0 0 300 120">
+          <rect x="40" y="30" width="96" height="30" rx="5" fill="#fff1e3" stroke="#ED7100"/>
+          <rect x="176" y="70" width="96" height="30" rx="5" fill="#eaf3fd" stroke="#2563eb" stroke-width="2"/>
+          <circle cx="136" cy="45" r="5" fill="#fff" stroke="#2563eb" stroke-width="1.6"/>
+          <circle cx="88" cy="60" r="5" fill="#fff" stroke="#2563eb" stroke-width="1.6"/>
+          <rect x="262" y="90" width="10" height="10" rx="2" fill="#2563eb"/>
+          <path d="M141 45 H156 V85 H176" stroke="#2563eb" stroke-width="1.8" stroke-dasharray="5 4" fill="none"/>
+          <path d="M226 26 l0 16 l4 -4 l3 7 l3 -1 l-3 -7 l6 0 z" fill="#18202c" stroke="#fff" stroke-width=".8"/>
+        </svg>
+      </div>
+      <h3>Layout editor</h3>
+      <p>Press 「レイアウト編集」 to drag blocks, resize them and connect them. In this demo, Save downloads the JSON instead of writing a file.</p>
+      <div class="tags"><span class="tag">Editable</span><span class="tag">Try it</span></div>
+    </a>
+  </div>
+
+  <h2>What you get</h2>
+  <ul class="feat">
+    <li><b>One HTML file</b><span>No external resources. Send it by mail or drop it on a shared drive.</span></li>
+    <li><b>Details on click</b><span>Each block opens a panel with role, functions, screens and scope.</span></li>
+    <li><b>Checked layout</b><span>The build script flags overlapping blocks, lines through blocks and broken IDs.</span></li>
+    <li><b>Optional editing</b><span>Drag, resize and connect in the browser, then save back to the data JSON locally.</span></li>
+    <li><b>Workload per phase</b><span>Development plans can show features, screens and effort per phase as a chart.</span></li>
+    <li><b>Three languages</b><span>UI text in English, Japanese or Chinese.</span></li>
+  </ul>
+
+  <h2>Install in Claude Code</h2>
+  <pre><code>/plugin marketplace add XuGuanghaiGoogle/interactive-diagram-html
+/plugin install interactive-diagram-html@interactive-diagram-html</code></pre>
+  <p class="note">Then describe what you need, for example: “Turn this repository into an architecture diagram and mark the PoC scope.” Requires Node.js 18 or later. Works with Codex and other agents too — see the README.</p>
+
+  <footer>MIT License · <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html">github.com/XuGuanghaiGoogle/interactive-diagram-html</a></footer>
+</div>
+</body>
+</html>

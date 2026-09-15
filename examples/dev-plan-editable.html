@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>受注管理システム刷新 · 開発計画（編集デモ）</title>
+<style>
+  :root{ --bg:#f4f6fa; --card:#ffffff; --ink:#1b2330; --muted:#5c6675; --line:#d8dee8; --panel:420px; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Yu Gothic UI","Hiragino Sans","Meiryo","Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;}
+  .wrap{max-width:1800px;margin:0 auto;padding:24px 20px 60px;transition:padding-right .25s ease}
+  body.open .wrap{padding-right:calc(var(--panel) + 24px)}
+  header h1{font-size:22px;margin:0 0 6px}
+  header p{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.75}
+  .legend{display:flex;flex-wrap:wrap;gap:13px;margin:0 0 8px;font-size:12px;color:var(--muted);align-items:center}
+  .legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:5px;border:1.5px solid}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:5px}
+  .tagchip{display:inline-block;background:#ffe6cc;border:1px solid #d79b00;color:#8a5a00;
+           border-radius:4px;padding:0 5px;font-size:10.5px;margin-right:4px;font-weight:700}
+  .hint{font-size:12px;color:#2e7d32;background:#e8f5e9;border:1px solid #c7e6c9;border-radius:8px;
+        padding:7px 12px;display:inline-block;margin:4px 0 12px}
+  .tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px}
+  .tools button{border:1px solid var(--line);background:#fff;color:#33404f;border-radius:8px;
+                padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+  .tools button:hover{background:#f1f4f9}
+  .tools button.pri{border-color:#82b366;color:#2e7d32;background:#f2fbf3;font-weight:700}
+  .tools .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+  .tools .tip{font-size:11.5px;color:var(--muted);margin-left:auto}
+  .board{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto;
+         box-shadow:0 2px 10px rgba(20,30,60,.06);height:clamp(460px,74vh,980px);position:relative}
+  #chart{display:block;margin:0 auto;touch-action:none;cursor:grab;
+      -webkit-user-select:none;user-select:none;background:#fff}
+  #chart.grabbing{cursor:grabbing}
+  .tools button[disabled]{opacity:.45;cursor:default}
+  .tools button.edit-on{border-color:#2563eb;color:#1d4ed8;background:#eff6ff;font-weight:700}
+  .tools .status{font-size:12px;color:#1d4ed8}
+  .tools .status.err{color:#c62828}
+  body.editing .board{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.18)}
+  body.editing .ng{cursor:move}
+  .ng .pt{opacity:0;cursor:crosshair;transition:opacity .12s}
+  body.editing .ng:hover .pt{opacity:1}
+  .ng .pt:hover{fill:#2563eb}
+  .ng .rs{opacity:0;cursor:ew-resize;transition:opacity .12s}
+  body.editing .ng:hover .rs{opacity:.85}
+  .ehit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;pointer-events:stroke}
+  .nd{cursor:pointer}
+  .nd .shp{transition:filter .15s ease}
+  .nd:hover .shp{filter:brightness(.96) drop-shadow(0 2px 4px rgba(0,0,0,.18))}
+  .nd.sel .shp{stroke-width:3.2;filter:drop-shadow(0 0 6px rgba(46,125,50,.5))}
+  .mx{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto}
+  .mx h3{margin:0 0 4px;font-size:14px}
+  .mx .cap{font-size:12px;color:var(--muted);margin:0 0 12px}
+  .mx table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
+  .mx th,.mx td{border-bottom:1px solid #eef1f6;padding:7px 10px;text-align:left;vertical-align:top}
+  .mx th{font-size:11px;color:var(--muted);font-weight:700;background:#f7f9fc}
+  .mx td.c,.mx th.c{text-align:center}
+  .mx tbody tr[data-go]{cursor:pointer}
+  .mx tbody tr[data-go]:hover{background:#f2f8ff}
+  .mx td.svc{font-weight:700;color:#243043}
+  .mx tr.grp td{background:#eef3f9;font-weight:700;color:#3d4a5c}
+  .notes{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+  .note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .note.wide{grid-column:1/-1}
+  .note h3{margin:0 0 8px;font-size:14px}
+  .note ul,.note ol{margin:0;padding-left:18px;font-size:12.5px;line-height:1.9;color:#3b4453}
+  .stats{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 14px}
+  .stats h3{margin:0 0 4px;font-size:14px}
+  .stats .cap{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .stats .chartbox{position:relative;max-width:820px}
+  .stats svg{display:block;width:100%;height:auto}
+  .stats .ctip{position:absolute;pointer-events:none;background:#1b2330;color:#fff;font-size:12px;line-height:1.7;border-radius:6px;padding:6px 10px;white-space:nowrap;z-index:5}
+  code{background:#eef1f6;border-radius:4px;padding:1px 5px;font-size:12px}
+
+  #panel{position:fixed;top:0;right:0;width:var(--panel);height:100vh;background:#fff;
+         border-left:1px solid var(--line);box-shadow:-6px 0 24px rgba(20,30,60,.10);
+         transform:translateX(100%);transition:transform .25s ease;z-index:50;display:flex;flex-direction:column}
+  body.open #panel{transform:translateX(0)}
+  #panel .ph{padding:18px 22px 12px;border-bottom:1px solid var(--line);position:relative}
+  #panel .pb{padding:12px 22px 40px;overflow:auto}
+  #panel h2{margin:6px 0 4px;font-size:17px;line-height:1.4;padding-right:30px}
+  #panel .sub{font-size:12px;color:var(--muted)}
+  #panel .badge{display:inline-block;font-size:11px;border-radius:20px;padding:2px 10px;border:1px solid;font-weight:700}
+  #panel h4{margin:16px 0 6px;font-size:12px;color:#2e7d32;letter-spacing:.06em}
+  #panel p{margin:0;font-size:13px;line-height:1.9;color:#33404f}
+  #panel ul{margin:0;padding-left:18px;font-size:13px;line-height:1.95;color:#33404f}
+  #panel .io{background:#f6f8fc;border:1px solid #e3e8f0;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.9;color:#3b4453}
+  #panel .kv{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  #panel .kv th{width:34%;text-align:left;color:var(--muted);font-weight:400;padding:4px 6px;border-bottom:1px solid #eef1f6;vertical-align:top}
+  #panel .kv td{padding:4px 6px;border-bottom:1px solid #eef1f6;color:#243043}
+  #panel .chips{display:flex;flex-wrap:wrap;gap:6px}
+  #panel .chip{border:1px solid var(--line);border-radius:20px;padding:3px 11px;font-size:12px;cursor:pointer;background:#fff;color:#33404f}
+  #panel .chip:hover{background:#f1f4f9}
+  #close{position:absolute;top:14px;right:16px;border:1px solid var(--line);background:#fff;
+         width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:#5c6675;line-height:1}
+  #close:hover{background:#f1f4f9}
+  @media(max-width:860px){ :root{--panel:100vw} body.open .wrap{padding-right:20px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="h1"></h1>
+    <p id="lead"></p>
+    <div class="legend" id="catlegend"></div>
+    <div class="legend" id="phaselegend"></div>
+    <div class="legend" id="extralegend"></div>
+    <div class="hint" id="hint"></div>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div class="tools" id="tools"></div>
+  <div class="tools" id="edittools"></div>
+  <div class="board"><svg id="chart" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div id="tables"></div>
+  <div class="notes" id="notes"></div>
+</div>
+
+<aside id="panel" aria-live="polite">
+  <div class="ph">
+    <span class="badge" id="p-badge"></span>
+    <button id="close">✕</button>
+    <h2 id="p-title"></h2>
+    <div class="sub" id="p-sub"></div>
+  </div>
+  <div class="pb" id="p-body"></div>
+</aside>
+
+<script>
+const DATA={"meta":{"title":"受注管理システム刷新 · 開発計画（編集デモ）","heading":"受注管理システム刷新 · 開発計画（編集デモ）","lead":"2026 年 10 月〜12 月の 6 スプリントで受注・在庫・出荷の中核機能を刷新し、12 月下旬に初回リリースする計画。横軸がスプリント、縦のレーンが工作流。\u003cb>太線がクリティカルパス\u003c/b>。","lang":"ja","hint":"▶ 「レイアウト編集」でブロックの移動・幅変更・線の追加を試せます。デモではファイルに保存できないため、「保存」で JSON がダウンロードされます。"},"canvas":{"w":1800,"h":1190},"categories":{"new":{"name":"新規機能","fill":"#fff1e3","stroke":"#ED7100"},"mod":{"name":"改修","fill":"#fef6e0","stroke":"#b7791f"},"base":{"name":"基盤・環境","fill":"#eaf3fd","stroke":"#0078D4"},"link":{"name":"外部連携","fill":"#fdeefa","stroke":"#C925D1"},"test":{"name":"テスト","fill":"#eef1fb","stroke":"#5C6BC0"},"mig":{"name":"移行・運用","fill":"#e9f7f0","stroke":"#13A10E"},"ms":{"name":"マイルストーン","fill":"#f3ecfb","stroke":"#7c3aed"}},"phase":{"label":"リリース範囲","levels":[{"key":"P0","color":"#2e7d32","desc":"初回リリース必須"},{"key":"P1","color":"#d79b00","desc":"リリース後 2 か月以内"},{"key":"P2","color":"#98a2b3","desc":"将来"}],"dim":["P1","P2"]},"panelLabels":{"role":"目的","fn":"機能説明","io":"入出力・区分","rel":"備考"},"tagLegend":{"FE":"フロントエンド","BE":"バックエンド","INF":"インフラ","QA":"品質保証","MIG":"移行チーム"},"timeline":{"x0":200,"colW":260,"y":60,"h":36,"bottom":1175,"labels":["S1（10/1〜10/14）","S2（10/15〜10/28）","S3（10/29〜11/11）","S4（11/12〜11/25）","S5（11/26〜12/9）","S6（12/10〜12/23）"]},"bands":[{"label":"前半（S1〜S3）","rect":[20,50,980,1130]},{"label":"後半（S4〜S6）","rect":[960,50,820,1130]}],"groups":[{"id":"lm","x":20,"y":110,"w":1760,"h":100,"label":"マイルストーン","stroke":"#7c3aed","fill":"#7c3aed0a"},{"id":"l1","x":20,"y":220,"w":1760,"h":150,"label":"基盤・環境","stroke":"#0078D4","fill":"#0078D40a"},{"id":"l2","x":20,"y":380,"w":1760,"h":150,"label":"受注機能","stroke":"#ED7100","fill":"#ED71000a"},{"id":"l3","x":20,"y":540,"w":1760,"h":150,"label":"在庫・出荷機能","stroke":"#13A10E","fill":"#13A10E0a"},{"id":"l4","x":20,"y":700,"w":1760,"h":150,"label":"外部連携","stroke":"#C925D1","fill":"#C925D10a"},{"id":"l5","x":20,"y":860,"w":1760,"h":150,"label":"テスト","stroke":"#5C6BC0","fill":"#5C6BC00a"},{"id":"l6","x":20,"y":1020,"w":1760,"h":150,"label":"移行・リリース","stroke":"#0f766e","fill":"#0f766e0a"}],"nodes":[{"id":"ms1","x":385,"y":125,"w":150,"h":70,"cat":"ms","shape":"diamond","d":["設計レビュー","10/14"],"t":"設計レビュー","s":"S1 終了時","role":"要件と基本設計を確定し、実装着手の可否を判断する。","fn":["画面・API・データモデルの基本設計を承認","P0 / P1 / P2 の範囲を確定","非機能要件（性能・可用性・監査）の目標値を確定","未決事項は担当と期限を付けて持ち越す"],"kv":[["日付","2026-10-14"],["責任者","PM"],["参加者","業務担当・各チームリード"]]},{"id":"ms2","x":1165,"y":125,"w":150,"h":70,"cat":"ms","shape":"diamond","d":["結合テスト","開始判定 11/25"],"t":"結合テスト開始判定","s":"S4 終了時","role":"P0 機能が結合テストに入れる品質に達しているかを判断する。","fn":["P0 機能の実装完了","単体テストのカバレッジ 70% 以上","重大バグ（Sev1/2）の未解決 0 件","会計連携のテスト環境が利用可能"],"kv":[["日付","2026-11-25"],["責任者","QA リード"]]},{"id":"ms3","x":1425,"y":125,"w":150,"h":70,"cat":"ms","shape":"diamond","d":["UAT 開始","判定 12/9"],"t":"UAT 開始判定","s":"S5 終了時","role":"業務部門による受入テストを開始してよいかを判断する。","fn":["結合テストの完了と重大バグ 0 件","性能テストの目標値達成（P1 だが結果は参考にする）","移行リハーサル 1 回目の完了","UAT シナリオと参加者の確定"],"kv":[["日付","2026-12-09"],["責任者","業務担当"]]},{"id":"ms4","x":1625,"y":125,"w":150,"h":70,"cat":"ms","shape":"diamond","d":["リリース判定","12/18"],"t":"リリース判定","s":"S6 中盤","role":"本番移行とリリースの Go / No-Go を判断する。","fn":["UAT 合格（受入基準をすべて満たす）","移行リハーサルでの差異 0 件","切り戻し手順の確認完了","運用引継ぎと問い合わせ窓口の準備完了"],"kv":[["日付","2026-12-18"],["責任者","事業責任者"]]},{"id":"f1","x":220,"y":254,"w":220,"h":50,"cat":"base","tags":["INF"],"d":["開発環境・CI 構築"],"t":"開発環境・CI 構築","s":"S1","phase":{"level":"P0","text":"dev / stg の 2 環境と、PR ごとのビルド・テスト自動実行まで。"},"kv":[["担当","インフラ"],["工数","8 人日"],["期間","S1"],["依存","なし"]],"role":"全チームが同じ手順で開発・テストできる土台を最初に用意する。","fn":["dev / stg 環境の構築（IaC で再現可能に）","PR ごとのビルド・単体テスト自動実行","ブランチ運用とレビュー規約の整備","シークレット管理の仕組み"],"sections":[{"h":"受入基準","items":["新規メンバーが半日で開発を始められる","PR のビルドが 10 分以内に完了する"]}],"io":"区分：基盤 ／ 成果物：環境一式、CI 定義、開発手順書"},{"id":"f2","x":480,"y":254,"w":220,"h":50,"cat":"base","tags":["BE"],"d":["認証・権限基盤"],"t":"認証・権限基盤","s":"S2","phase":{"level":"P0","text":"SSO ログインとロール 3 種（担当・承認者・管理者）まで。"},"kv":[["担当","バックエンド"],["工数","10 人日"],["期間","S2"],["依存","開発環境・CI 構築"]],"role":"全画面・API が共通で使う認証と権限判定を 1 か所に集約する。","fn":["社内 IdP とのシングルサインオン","ロールと権限の定義（担当・承認者・管理者）","API ごとの権限チェックの共通化","操作ログの記録"],"sections":[{"h":"受入基準","items":["全 API が権限チェックを通る（未認証アクセス 0 件）","権限変更が 5 分以内に反映される"]}],"io":"区分：基盤 ／ 入力：IdP のトークン ／ 出力：ユーザー情報・ロール"},{"id":"f3","x":1000,"y":254,"w":220,"h":50,"cat":"base","tags":["INF"],"d":["本番環境構築"],"t":"本番環境構築","s":"S4","phase":{"level":"P0","text":"冗長構成とバックアップ、切り戻し手順まで。"},"kv":[["担当","インフラ"],["工数","10 人日"],["期間","S4"],["依存","開発環境・CI 構築"]],"role":"移行リハーサルとリリースに使う本番環境を用意する。","fn":["stg と同じ IaC で本番環境を構築","DB の冗長化と自動バックアップ","リリース手順と切り戻し手順の整備","本番アクセス権限の最小化"],"sections":[{"h":"受入基準","items":["バックアップからの復元を 1 回実施して成功","切り戻しを 30 分以内に完了できる"]}],"io":"区分：基盤 ／ 成果物：本番環境、運用手順書"},{"id":"f4","x":1000,"y":312,"w":220,"h":50,"cat":"base","tags":["INF"],"d":["監視・ログ基盤"],"t":"監視・ログ基盤","s":"S4","phase":{"level":"P1","text":"P0 では基本メトリクスとエラー通知のみ。ダッシュボードは P1。"},"kv":[["担当","インフラ"],["工数","6 人日"],["期間","S4"],["依存","本番環境構築"]],"role":"障害の早期検知と原因調査に必要な情報を集める。","fn":["アプリ・DB のメトリクス収集","エラー率・応答時間のアラート","ログの集約と検索","業務 KPI のダッシュボード（P1）"],"sections":[{"h":"受入基準","items":["エラー発生から 5 分以内に通知される"]}],"io":"区分：基盤 ／ 出力：アラート、ダッシュボード"},{"id":"o1","x":480,"y":414,"w":220,"h":50,"cat":"new","tags":["FE","BE"],"d":["受注登録"],"t":"受注登録","s":"S2","phase":{"level":"P0","text":"画面入力と CSV 一括登録まで。EDI 取込は P1 の別機能。"},"kv":[["担当","受注チーム"],["工数","15 人日"],["期間","S2"],["依存","認証・権限基盤"]],"role":"受注情報を正確に登録し、以降の引当・出荷・請求の起点を作る。","fn":["顧客・商品・数量・納期の入力とリアルタイム検証","CSV による一括登録（エラー行のみ差し戻し）","与信限度額のチェック","登録と同時に在庫引当を依頼","登録履歴の保持"],"sections":[{"h":"受入基準","items":["1 件の登録が 3 秒以内に完了する","CSV 1,000 行を 1 分以内に取り込める","与信超過は登録前に警告される"]}],"io":"区分：画面 + API ／ 入力：受注情報 ／ 出力：受注データ、引当依頼"},{"id":"o2","x":740,"y":414,"w":220,"h":50,"cat":"new","tags":["FE","BE"],"d":["受注検索・一覧"],"t":"受注検索・一覧","s":"S3","phase":{"level":"P0","text":"条件検索と CSV 出力まで。保存検索条件は P1。"},"kv":[["担当","受注チーム"],["工数","8 人日"],["期間","S3"],["依存","受注登録"]],"role":"担当者が必要な受注を素早く探し、状況を把握できるようにする。","fn":["顧客・期間・状態・担当での複合検索","一覧の並べ替えとページング","検索結果の CSV 出力","状態（引当済・出荷済など）のひと目表示"],"sections":[{"h":"受入基準","items":["10 万件から 2 秒以内に検索できる"]}],"io":"区分：画面 + API ／ 入力：検索条件 ／ 出力：受注一覧"},{"id":"o3","x":1000,"y":414,"w":220,"h":50,"cat":"new","tags":["FE","BE"],"d":["受注変更・キャンセル"],"t":"受注変更・キャンセル","s":"S4","phase":{"level":"P0","text":"出荷前の変更・キャンセルまで。出荷後の返品は P2。"},"kv":[["担当","受注チーム"],["工数","10 人日"],["期間","S4"],["依存","受注検索・一覧"]],"role":"出荷前の受注内容の変更と取り消しを安全に行えるようにする。","fn":["数量・納期・届け先の変更","キャンセル時の引当解除","変更履歴と理由の記録","出荷指示済みの受注は変更不可にする"],"sections":[{"h":"受入基準","items":["キャンセル後、引当数量が即時に戻る","変更履歴を監査で追える"]}],"io":"区分：画面 + API ／ 入力：変更内容 ／ 出力：更新後の受注、引当解除"},{"id":"o4","x":1000,"y":472,"w":220,"h":50,"cat":"new","tags":["BE"],"d":["受注承認ワークフロー"],"t":"受注承認ワークフロー","s":"S4","phase":{"level":"P1","text":"P0 は承認なしで運用し、高額受注の承認フローを P1 で追加。"},"kv":[["担当","受注チーム"],["工数","8 人日"],["期間","S4"],["依存","受注変更・キャンセル"]],"role":"一定金額以上の受注に承認を必須にし、与信リスクを抑える。","fn":["金額しきい値による承認要否の判定","承認者への通知と承認 / 却下","承認期限と自動エスカレーション","承認履歴の記録"],"sections":[{"h":"受入基準","items":["しきい値以上の受注は承認なしで出荷指示に進まない"]}],"io":"区分：API + 通知 ／ 入力：受注 ／ 出力：承認結果"},{"id":"o5","x":1260,"y":414,"w":220,"h":50,"cat":"mod","tags":["BE"],"d":["注文請書の帳票出力"],"t":"注文請書の帳票出力","s":"S5","phase":{"level":"P1","text":"P0 は既存帳票システムを継続利用し、P1 で置き換え。"},"kv":[["担当","受注チーム"],["工数","6 人日"],["期間","S5"],["依存","受注変更・キャンセル"]],"role":"既存の帳票出力を新システムのデータから生成できるようにする。","fn":["注文請書の PDF 生成","既存レイアウトの踏襲","メール送付と送付履歴","再発行時の版管理"],"sections":[{"h":"受入基準","items":["既存帳票と記載項目が一致する"]}],"io":"区分：バッチ + API ／ 出力：PDF"},{"id":"s1","x":740,"y":574,"w":220,"h":50,"cat":"new","tags":["BE"],"d":["在庫引当"],"t":"在庫引当","s":"S3","phase":{"level":"P0","text":"倉庫 1 拠点の引当まで。複数拠点の最適引当は P2。"},"kv":[["担当","在庫チーム"],["工数","12 人日"],["期間","S3"],["依存","受注登録"]],"role":"受注に対して在庫を確保し、欠品と二重引当を防ぐ。","fn":["受注登録時の自動引当","引当不足時の入荷予定との突合","排他制御による二重引当の防止","引当解除（キャンセル・変更時）"],"sections":[{"h":"受入基準","items":["同時 50 件の引当で二重引当 0 件","引当結果が 1 秒以内に返る"]}],"io":"区分：API ／ 入力：引当依頼 ／ 出力：引当結果、在庫数"},{"id":"s2","x":1000,"y":574,"w":220,"h":50,"cat":"new","tags":["BE"],"d":["出荷指示"],"t":"出荷指示","s":"S4","phase":{"level":"P0","text":"倉庫システムへの出荷指示送信と実績取込まで。"},"kv":[["担当","在庫チーム"],["工数","10 人日"],["期間","S4"],["依存","在庫引当"]],"role":"引当済みの受注を倉庫へ指示し、出荷実績を受け取る。","fn":["納期に基づく出荷指示の作成","倉庫システムへの送信と再送制御","出荷実績の取込と受注状態の更新","売上計上データの生成（会計連携へ）"],"sections":[{"h":"受入基準","items":["指示送信の失敗は自動再送され、3 回失敗で通知される"]}],"io":"区分：バッチ + API ／ 入力：引当済み受注 ／ 出力：出荷指示、出荷実績"},{"id":"s3","x":1000,"y":632,"w":220,"h":50,"cat":"new","tags":["BE"],"d":["在庫照会 API"],"t":"在庫照会 API","s":"S4","phase":{"level":"P1","text":"P0 は画面照会のみ。外部向け API は P1。"},"kv":[["担当","在庫チーム"],["工数","5 人日"],["期間","S4"],["依存","出荷指示"]],"role":"営業や外部システムが最新の在庫数を参照できるようにする。","fn":["商品・倉庫別の在庫数照会","引当可能数の返却","API キーとレート制限","照会ログの記録"],"io":"区分：API ／ 出力：在庫数"},{"id":"s4","x":1260,"y":574,"w":220,"h":50,"cat":"mod","tags":["BE"],"d":["棚卸連携"],"t":"棚卸連携","s":"S5","phase":{"level":"P2","text":"初回リリースの対象外。既存の棚卸運用を継続する。"},"kv":[["担当","在庫チーム"],["工数","8 人日"],["期間","未定"],["依存","出荷指示"]],"role":"棚卸結果を在庫へ反映し、帳簿在庫と実在庫の差異を解消する。","fn":["棚卸結果の取込","差異の算出と承認","在庫数の補正","差異履歴の保持"],"io":"区分：バッチ ／ 入力：棚卸結果 ／ 出力：補正後在庫"},{"id":"x1","x":740,"y":734,"w":480,"h":50,"cat":"link","tags":["BE"],"d":["会計システム連携（売上・請求）"],"t":"会計システム連携","s":"S3〜S4","phase":{"level":"P0","text":"売上計上と請求データの日次連携まで。入金消込は P2。"},"kv":[["担当","連携チーム"],["工数","16 人日"],["期間","S3〜S4"],["依存","受注登録、出荷指示"]],"role":"出荷実績から売上と請求を会計システムへ正確に連携する。","fn":["出荷実績に基づく売上計上データの生成","請求データの日次連携","連携失敗時の再送と差異レポート","月次締め処理との整合","会計側のテスト環境との結合"],"sections":[{"h":"受入基準","items":["日次連携の差異 0 件（突合レポートで確認）","連携失敗は翌営業日朝までに通知される"]}],"io":"区分：バッチ ／ 入力：出荷実績 ／ 出力：売上・請求データ"},{"id":"x2","x":1260,"y":734,"w":220,"h":50,"cat":"link","tags":["BE"],"d":["EDI 受注取込"],"t":"EDI 受注取込","s":"S5","phase":{"level":"P1","text":"P0 は既存 EDI から CSV 経由で受注登録する暫定運用。"},"kv":[["担当","連携チーム"],["工数","10 人日"],["期間","S5"],["依存","受注登録"]],"role":"取引先からの EDI 受注を自動で取り込み、手入力をなくす。","fn":["EDI メッセージの受信と変換","商品コードのマッピング","取込エラーの一覧と再処理","受注登録 API の呼び出し"],"io":"区分：バッチ ／ 入力：EDI メッセージ ／ 出力：受注データ"},{"id":"x3","x":1000,"y":792,"w":220,"h":50,"cat":"link","tags":["BE"],"d":["通知（メール / Teams）"],"t":"通知（メール / Teams）","s":"S4","phase":{"level":"P1","text":"P0 はエラー通知のみ。業務通知は P1。"},"kv":[["担当","連携チーム"],["工数","4 人日"],["期間","S4"],["依存","なし"]],"role":"承認依頼や出荷完了などを関係者へ知らせる共通機能。","fn":["テンプレートによる通知文面の管理","メールと Teams への送信","送信失敗時の再送","送信履歴の保持"],"io":"区分：共通機能 ／ 出力：通知"},{"id":"t1","x":480,"y":894,"w":740,"h":50,"cat":"test","tags":["QA"],"d":["単体テスト自動化（各機能と並行）"],"t":"単体テスト自動化","s":"S2〜S4","phase":{"level":"P0","text":"P0 機能の主要ロジックにカバレッジ 70% 以上。"},"kv":[["担当","各チーム + QA"],["工数","20 人日"],["期間","S2〜S4"],["依存","開発環境・CI 構築"]],"role":"機能開発と並行して自動テストを整備し、回帰を早期に検知する。","fn":["引当・与信・連携など重要ロジックのテスト優先","CI での自動実行","カバレッジの計測と可視化","テストデータの共通化"],"io":"区分：テスト ／ 成果物：自動テスト、カバレッジレポート"},{"id":"t2","x":1260,"y":894,"w":220,"h":50,"cat":"test","tags":["QA"],"d":["結合テスト"],"t":"結合テスト","s":"S5","phase":{"level":"P0","text":"受注〜引当〜出荷〜会計連携の主要シナリオ。"},"kv":[["担当","QA"],["工数","15 人日"],["期間","S5"],["依存","出荷指示、会計システム連携"]],"role":"機能をまたぐ業務シナリオが最初から最後まで通ることを確認する。","fn":["受注登録 → 引当 → 出荷 → 売上計上の通しシナリオ","異常系（欠品・与信超過・連携失敗）","権限別の操作確認","不具合の起票と再テスト"],"sections":[{"h":"受入基準","items":["主要シナリオ 30 本がすべて合格","Sev1/2 の未解決 0 件"]}],"io":"区分：テスト ／ 成果物：テスト結果報告書"},{"id":"t3","x":1260,"y":952,"w":220,"h":50,"cat":"test","tags":["QA"],"d":["性能テスト"],"t":"性能テスト","s":"S5","phase":{"level":"P1","text":"P0 では主要画面の簡易計測のみ。本格実施は P1。"},"kv":[["担当","QA + インフラ"],["工数","6 人日"],["期間","S5"],["依存","結合テスト"]],"role":"ピーク時の負荷でも応答時間の目標を満たすことを確認する。","fn":["月末ピーク相当の同時アクセス","CSV 一括登録の処理時間","バッチ処理時間の計測","ボトルネックの特定と対策"],"io":"区分：テスト ／ 成果物：性能測定結果"},{"id":"t4","x":1520,"y":894,"w":220,"h":50,"cat":"test","tags":["QA"],"d":["受入テスト（UAT）"],"t":"受入テスト（UAT）","s":"S6","phase":{"level":"P0","text":"業務部門による P0 機能の受入。"},"kv":[["担当","業務部門 + QA"],["工数","10 人日"],["期間","S6"],["依存","結合テスト"]],"role":"業務部門が実際の業務手順で使えることを確認し、リリース可否の根拠にする。","fn":["業務シナリオに沿った操作確認","帳票・会計連携結果の目視確認","指摘事項の優先度付けと対応","受入判定書の作成"],"sections":[{"h":"受入基準","items":["UAT シナリオ 20 本がすべて合格","業務部門の責任者が受入判定書に署名"]}],"io":"区分：テスト ／ 成果物：受入判定書"},{"id":"r1","x":480,"y":1054,"w":220,"h":50,"cat":"mig","tags":["MIG"],"d":["データ移行設計"],"t":"データ移行設計","s":"S2","phase":{"level":"P0","text":"受注残・在庫・顧客・商品マスタの移行方式まで。"},"kv":[["担当","移行チーム"],["工数","8 人日"],["期間","S2"],["依存","設計レビュー"]],"role":"旧システムから何を、どの時点で、どう移すかを決める。","fn":["移行対象データと件数の洗い出し","項目マッピングと変換ルール","移行時点（カットオーバー日）の決定","照合方法（件数・金額）の定義"],"io":"区分：移行 ／ 成果物：移行設計書"},{"id":"r2","x":1260,"y":1054,"w":220,"h":50,"cat":"mig","tags":["MIG"],"d":["移行リハーサル"],"t":"移行リハーサル","s":"S5","phase":{"level":"P0","text":"本番同等データで 2 回実施。"},"kv":[["担当","移行チーム + インフラ"],["工数","10 人日"],["期間","S5"],["依存","データ移行設計、本番環境構築"]],"role":"本番と同じ手順・データ量で移行を試し、所要時間と差異を確認する。","fn":["本番同等データでの移行実行","所要時間の計測","件数・金額の照合","手順書の修正"],"sections":[{"h":"受入基準","items":["照合差異 0 件","移行が停止可能時間（8 時間）内に収まる"]}],"io":"区分：移行 ／ 成果物：リハーサル結果報告"},{"id":"r3","x":1520,"y":1054,"w":220,"h":50,"cat":"mig","tags":["MIG","INF"],"d":["本番移行・リリース"],"t":"本番移行・リリース","s":"S6（12/19〜12/20）","phase":{"level":"P0","text":"週末の停止時間内に移行と切替を完了。"},"kv":[["担当","移行チーム + インフラ"],["工数","6 人日"],["期間","12/19〜12/20"],["依存","受入テスト、移行リハーサル"]],"role":"旧システムを停止し、データを移して新システムへ切り替える。","fn":["旧システムの受付停止","データ移行と照合","新システムの稼働確認","問題発生時の切り戻し判断"],"io":"区分：移行 ／ 成果物：切替完了報告"},{"id":"r4","x":1520,"y":1112,"w":220,"h":50,"cat":"mig","tags":["MIG"],"d":["運用引継ぎ・手順書"],"t":"運用引継ぎ・手順書","s":"S6","phase":{"level":"P0","text":"問い合わせ窓口と一次対応手順まで。"},"kv":[["担当","各チーム"],["工数","5 人日"],["期間","S6"],["依存","本番移行・リリース"]],"role":"リリース後の運用と問い合わせ対応を運用チームへ引き継ぐ。","fn":["運用手順書と障害対応手順","問い合わせ窓口と一次回答集","操作説明会の実施","リリース後 2 週間のハイパーケア体制"],"io":"区分：ドキュメント ／ 成果物：運用手順書、FAQ"}],"edges":[{"from":"f1:r","to":"f2:l","mx":460},{"from":"f2:b","to":"o1:t","bold":true},{"from":"o1:r","to":"o2:l","mx":720},{"from":"o2:r","to":"o3:l","mx":980},{"from":"o3:b","to":"o4:t"},{"from":"o3:r","to":"o5:l","mx":1240},{"from":"o1:r","to":"s1:l","mx":720,"bold":true},{"from":"o1:r","to":"x1:l","mx":720},{"from":"s1:r","to":"s2:l","mx":980,"bold":true},{"from":"s2:b","to":"s3:t"},{"from":"s2:r","to":"s4:l","mx":1240},{"from":"x1:r","to":"t2:l","mx":1232},{"from":"s2:r","to":"t2:l","mx":1240,"bold":true},{"from":"t1:r","to":"t2:l","mx":1240},{"from":"t2:r","to":"t4:l","mx":1500,"bold":true},{"from":"t2:b","to":"t3:t"},{"from":"r1:r","to":"r2:l"},{"from":"f3:r","to":"r2:l","mx":1250,"dash":true,"label":"本番環境","lx":1250,"ly":1030},{"from":"t4:b","to":"r3:t","bold":true},{"from":"r2:r","to":"r3:l","mx":1500},{"from":"r3:b","to":"r4:t"}],"tables":[{"type":"phase","title":"リリース範囲（P0 / P1 / P2）","caption":"初回リリースで「やること」と「やらないこと」の線引き。行をクリックすると図と説明パネルが連動します。","columns":["機能・タスク","範囲","P0 で実施する内容"],"groups":[{"label":"基盤・環境","ids":["f1","f2","f3","f4"]},{"label":"受注機能","ids":["o1","o2","o3","o4","o5"]},{"label":"在庫・出荷機能","ids":["s1","s2","s3","s4"]},{"label":"外部連携","ids":["x1","x2","x3"]},{"label":"テスト","ids":["t1","t2","t3","t4"]},{"label":"移行・リリース","ids":["r1","r2","r3","r4"]}]},{"type":"custom","title":"機能一覧","caption":"工数は見積もり時点の値。スプリント終了ごとに実績と差異を更新する。","columns":["ID","機能名","区分","範囲","期間","工数（人日）","担当"],"rows":[{"group":"受注機能"},{"go":"o1","cells":["O-01","受注登録","新規","P0","S2","15","受注チーム"]},{"go":"o2","cells":["O-02","受注検索・一覧","新規","P0","S3","8","受注チーム"]},{"go":"o3","cells":["O-03","受注変更・キャンセル","新規","P0","S4","10","受注チーム"]},{"go":"o4","cells":["O-04","受注承認ワークフロー","新規","P1","S4","8","受注チーム"]},{"go":"o5","cells":["O-05","注文請書の帳票出力","改修","P1","S5","6","受注チーム"]},{"group":"在庫・出荷機能"},{"go":"s1","cells":["S-01","在庫引当","新規","P0","S3","12","在庫チーム"]},{"go":"s2","cells":["S-02","出荷指示","新規","P0","S4","10","在庫チーム"]},{"go":"s3","cells":["S-03","在庫照会 API","新規","P1","S4","5","在庫チーム"]},{"go":"s4","cells":["S-04","棚卸連携","改修","P2","未定","8","在庫チーム"]},{"group":"外部連携"},{"go":"x1","cells":["X-01","会計システム連携","連携","P0","S3〜S4","16","連携チーム"]},{"go":"x2","cells":["X-02","EDI 受注取込","連携","P1","S5","10","連携チーム"]},{"go":"x3","cells":["X-03","通知（メール / Teams）","連携","P1","S4","4","連携チーム"]}]},{"type":"custom","title":"マイルストーン","columns":["日付","名称","判定基準","責任者"],"rows":[{"go":"ms1","cells":["10/14","設計レビュー","基本設計の承認、P0 範囲の確定","PM"]},{"go":"ms2","cells":["11/25","結合テスト開始判定","P0 実装完了、カバレッジ 70%、Sev1/2 未解決 0","QA リード"]},{"go":"ms3","cells":["12/9","UAT 開始判定","結合テスト完了、移行リハーサル 1 回目完了","業務担当"]},{"go":"ms4","cells":["12/18","リリース判定","UAT 合格、移行差異 0、切り戻し手順確認","事業責任者"]}]}],"notes":[{"title":"目的とスコープ","wide":true,"items":["\u003cb>目的\u003c/b>：老朽化した受注管理システムを刷新し、受注から売上計上までを 1 つのデータで一貫管理する。","\u003cb>初回リリース（P0）\u003c/b>：受注登録・検索・変更、在庫引当、出荷指示、会計連携。業務を止めずに切り替えられる最小範囲。","\u003cb>対象外\u003c/b>：返品処理、複数倉庫の最適引当、入金消込（いずれも P2 以降）。","\u003cb>リリース日\u003c/b>：2026 年 12 月 19〜20 日（週末の停止時間内に切替）。"]},{"title":"前提条件","items":["会計システム側のテスト環境が S3 開始までに利用可能であること","業務部門の UAT 参加者（5 名）を S6 に確保できること","旧システムの停止可能時間は最大 8 時間","倉庫システムのインターフェース仕様は変更しない"]},{"title":"体制と役割","items":["PM 1 名：全体進行、マイルストーン判定の運営","受注・在庫・連携チーム 各 2 名：機能開発と単体テスト","インフラ 1 名、QA 1 名、移行 1 名","業務担当 1 名：要件確定、UAT の取りまとめ"]},{"title":"工数サマリ（見積もり）","items":["P0：約 175 人日 ／ P1：約 45 人日 ／ P2：約 8 人日","チーム別：受注 47、在庫 35、連携 30、基盤 34、テスト 51、移行 29","予備として P0 工数の 15%（約 26 人日）を S5〜S6 に確保","※ 見積もりは設計レビュー後に再見積もりする"]},{"title":"主要リスクと対策","items":["\u003cb>会計連携の仕様確定遅れ\u003c/b> → S2 中に仕様凍結、遅れた場合は CSV 連携で暫定対応","\u003cb>移行データの品質\u003c/b> → S2 から旧データのクレンジングを並行実施","\u003cb>UAT 参加者の確保\u003c/b> → S4 時点で業務部門と日程を確定","\u003cb>クリティカルパスの遅延\u003c/b> → 太線のタスクは週次で進捗を確認し、遅れは即日共有"]},{"title":"P0 で省かないもの・割り切るもの","items":["\u003cb>省かない\u003c/b>：権限チェックの共通化、二重引当の防止、会計連携の差異照合、切り戻し手順、移行リハーサル 2 回","\u003cb>割り切る\u003c/b>：承認ワークフロー、EDI 自動取込、帳票の置き換え、ダッシュボード、性能テストの本格実施"]}],"editable":true};
+(function(){
+'use strict';
+if(!DATA){document.body.innerHTML='<p style="padding:40px;font-family:sans-serif">DATA is empty. Build this file with scripts/build.mjs.</p>';return;}
+
+/* ---------- i18n ---------- */
+const I18N={
+ ja:{fitw:'幅に合わせる',all:'全体表示',tip:'ドラッグで移動 / Ctrl（⌘）＋ホイールで拡大縮小',
+     hint:'▶ 各ブロックをクリックすると、右側に説明が開きます。関連のあるブロックだけが強調表示されます。',
+     role:'役割',fn:'主な機能',io:'入力 / 出力・接続',uses:'関連（使用する）',usedBy:'関連（使われる）',
+     phase:'{label}',rel:'補足・対応',close:'閉じる',toggleOn:'{label} を強調',toggleOff:'強調を解除',
+     phaseLegend:'ブロック右端の色帯＝{label}：',dotLegend:'ブロック右下の●＝関連先：',tagLegend:'左下のタグ：',
+     component:'コンポーネント',level:'判定',detail:'内容',
+     edit:'レイアウト編集',editDone:'編集を終了',undo:'元に戻す',delEdge:'線を削除',dash:'破線',bold:'太線',label:'ラベル',save:'保存',
+     editHint:'編集中：ブロックをドラッグで移動、右下の青い四角で幅を変更。ブロック上の青い点から別のブロックへドラッグすると線を追加。線をクリックで削除・スタイル変更、ダブルクリックでラベル編集。Ctrl+Z で元に戻す。',
+     saved:'保存して再生成しました',savedWarn:'保存しました（検証警告 {label} 件、コンソール参照）',saveFail:'ファイルに書き戻せないため JSON をダウンロードしました',
+     labelPrompt:'線のラベル（空欄で削除）',leave:'未保存の変更があります',
+     focus:'{label}を強調',chartY:'画面数',newMark:'新規',effortKey:'工数',effortFmt:'約 {label} 人月',
+     sumCols:['フェーズ','期間','目標','機能数','画面数（新規）','投入 / 換算工数','主な機能'],
+     tipScreens:'画面数',tipNew:'新規',tipFeatures:'機能数',tipEffort:'換算工数',tipActual:'投入'},
+ zh:{fitw:'适合宽度',all:'全体显示',tip:'拖拽移动 / Ctrl（⌘）+ 滚轮缩放',
+     hint:'▶ 点击方块，在右侧查看说明；只有相关的方块会被突出显示。',
+     role:'作用',fn:'主要功能',io:'输入 / 输出・连接',uses:'关联（使用）',usedBy:'关联（被使用）',
+     phase:'{label}',rel:'补充・对应',close:'关闭',toggleOn:'突出 {label}',toggleOff:'取消突出',
+     phaseLegend:'方块右侧色条＝{label}：',dotLegend:'方块右下的●＝关联对象：',tagLegend:'左下标签：',
+     component:'组件',level:'判定',detail:'内容',
+     edit:'编辑布局',editDone:'结束编辑',undo:'撤销',delEdge:'删除连线',dash:'虚线',bold:'粗线',label:'标签',save:'保存',
+     editHint:'编辑中：拖动方块移动位置，拖右下角蓝色小方块调整宽度；鼠标移到方块上，从边上的蓝点拖到另一个方块即可连线；点击连线后可删除或改样式，双击连线编辑标签。Ctrl+Z 撤销。',
+     saved:'已保存并重新生成',savedWarn:'已保存（校验警告 {label} 条，详见控制台）',saveFail:'无法写回文件，已改为下载 JSON',
+     labelPrompt:'连线标签（留空为删除）',leave:'有未保存的修改',
+     focus:'突出{label}',chartY:'画面数',newMark:'新增',effortKey:'工数',effortFmt:'约 {label} 人月',
+     sumCols:['阶段','期间','目标','机能数','画面数（新增）','实投 / 换算工数','主要机能'],
+     tipScreens:'画面数',tipNew:'新增',tipFeatures:'机能数',tipEffort:'换算工数',tipActual:'实投'},
+ en:{fitw:'Fit width',all:'Show all',tip:'Drag to pan / Ctrl(⌘)+wheel to zoom',
+     hint:'▶ Click a block to open its details on the right. Related blocks are highlighted.',
+     role:'Role',fn:'Key functions',io:'Inputs / outputs',uses:'Uses',usedBy:'Used by',
+     phase:'{label}',rel:'Notes',close:'Close',toggleOn:'Highlight {label}',toggleOff:'Clear highlight',
+     phaseLegend:'Right-edge color = {label}:',dotLegend:'Dots = related to:',tagLegend:'Tags:',
+     component:'Component',level:'Level',detail:'Detail',
+     edit:'Edit layout',editDone:'Done',undo:'Undo',delEdge:'Delete line',dash:'Dashed',bold:'Bold',label:'Label',save:'Save',
+     editHint:'Editing: drag blocks to move; drag the blue corner to resize width. Hover a block and drag from a blue dot to another block to connect. Click a line to delete or restyle; double-click to edit its label. Ctrl+Z to undo.',
+     saved:'Saved and rebuilt',savedWarn:'Saved ({label} validation warnings, see console)',saveFail:'Could not write back; downloaded JSON instead',
+     labelPrompt:'Line label (empty to remove)',leave:'You have unsaved changes',
+     focus:'Highlight {label}',chartY:'Screens',newMark:'new',effortKey:'Effort',effortFmt:'~{label} person-months',
+     sumCols:['Phase','Period','Goal','Features','Screens (new)','Actual / est. effort','Main features'],
+     tipScreens:'Screens',tipNew:'new',tipFeatures:'Features',tipEffort:'Est. effort',tipActual:'Actual'}
+};
+const meta=DATA.meta||{};
+const L=Object.assign({},I18N[meta.lang]||I18N.ja,DATA.uiText||{});
+const PL=Object.assign({role:L.role,fn:L.fn,io:L.io,rel:L.rel},DATA.panelLabels||{});
+function fmt(s,label){return String(s).replace('{label}',label||'');}
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+document.title=meta.title||meta.heading||'';
+document.documentElement.lang=meta.lang||'ja';
+$('h1').textContent=meta.heading||meta.title||'';
+if(meta.lead)$('lead').innerHTML=meta.lead;else $('lead').remove();
+$('hint').textContent=meta.hint||L.hint;
+$('close').title=L.close;
+
+const NS='http://www.w3.org/2000/svg';
+const svg=$('chart');
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+const CW=DATA.canvas.w, CH=DATA.canvas.h;
+svg.setAttribute('viewBox','0 0 '+CW+' '+CH);
+const defs=el('defs');
+defs.innerHTML=
+ '<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5a6472"/></marker>'+
+ '<marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5a9c56"/></marker>'+
+ '<marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/></marker>';
+svg.appendChild(defs);
+const gGrid=el('g'),gBand=el('g'),gEdge=el('g'),gNode=el('g'),gTmp=el('g',{'pointer-events':'none'});
+[gGrid,gBand,gEdge,gNode,gTmp].forEach(function(g){svg.appendChild(g);});
+const ED={on:false,drag:null,link:null,sel:-1,hist:[],dirty:false,justDragged:false};
+
+const CAT=DATA.categories||{};
+const PH=DATA.phase||null;
+const PHC={};if(PH)(PH.levels||[]).forEach(function(l){PHC[l.key]=l.color;});
+const N={},GEL={},INFO={};
+
+/* ---------- text fitting ---------- */
+function tw(str,size){let w=0;for(const ch of String(str)){w+=(/[\u0020-\u00ff]/.test(ch)?0.58:1);}return w*size;}
+function fit(str,base,maxW){let s=base;while(s>8&&tw(str,s)>maxW)s-=0.5;return s;}
+
+/* ---------- groups / timeline / labels ---------- */
+(DATA.groups||[]).forEach(function(g){
+  gBand.appendChild(el('rect',{x:g.x,y:g.y,width:g.w,height:g.h,rx:12,fill:g.fill||'#fbfcfe',stroke:g.stroke||'#8b95a3',
+    'stroke-width':1.6,'stroke-dasharray':g.dash?'6 4':'none',opacity:.95}));
+  if(g.label){const t=el('text',{x:g.x+14,y:g.y+21,'font-size':13,'font-weight':700,fill:g.stroke||'#3d4a5c'});
+    t.textContent=g.label;gBand.appendChild(t);}
+  N[g.id]={x:g.x,y:g.y,w:g.w,h:g.h,cx:g.x+g.w/2,cy:g.y+g.h/2,group:true};
+});
+if(DATA.timeline){
+  const T=DATA.timeline, bottom=T.bottom||CH-10;
+  T.labels.forEach(function(lb,i){
+    const x=T.x0+i*T.colW;
+    gGrid.appendChild(el('rect',{x:x+2,y:T.y,width:T.colW-4,height:T.h,rx:6,fill:i%2?'#eef3fa':'#f5f8fc',stroke:'#d8dee8'}));
+    const t=el('text',{x:x+T.colW/2,y:T.y+T.h/2+4,'text-anchor':'middle','font-size':12,'font-weight':700,fill:'#3d4a5c'});
+    t.textContent=lb;gGrid.appendChild(t);
+    gGrid.appendChild(el('line',{x1:x,y1:T.y+T.h,x2:x,y2:bottom,stroke:'#dfe5ee','stroke-dasharray':'4 5'}));
+  });
+  const xe=T.x0+T.labels.length*T.colW;
+  gGrid.appendChild(el('line',{x1:xe,y1:T.y+T.h,x2:xe,y2:bottom,stroke:'#dfe5ee','stroke-dasharray':'4 5'}));
+}
+function freeLabel(l,layer){
+  const t=el('text',{x:l.x,y:l.y,'text-anchor':l.anchor||'middle','font-size':l.size||11,'font-weight':l.bold?700:400,fill:l.color||'#3d4a5c'});
+  t.textContent=l.text;(layer||gEdge).appendChild(t);
+}
+
+/* ---------- nodes ---------- */
+const USE={},REV={};
+(DATA.nodes||[]).forEach(function(n){if(n.uses&&n.uses.length){USE[n.id]=n.uses;n.uses.forEach(function(k){(REV[k]=REV[k]||[]).push(n.id);});}});
+const DOT={};(DATA.nodes||[]).forEach(function(n){if(n.dot)DOT[n.id]=n.dot;});
+
+function drawNode(n){
+  const th=CAT[n.cat]||{fill:'#eef1f5',stroke:'#68758a',name:''};
+  const shape=n.shape||'rect';
+  const g=el('g');
+  const x=n.x,y=n.y,w=n.w,h=n.h,cx=x+w/2,cy=y+h/2;
+  let shp;
+  if(shape==='diamond'){
+    shp=el('polygon',{points:cx+','+y+' '+(x+w)+','+cy+' '+cx+','+(y+h)+' '+x+','+cy,fill:th.fill,stroke:th.stroke,'stroke-width':1.6});
+  }else if(shape==='cylinder'){
+    const ry=11;
+    shp=el('path',{d:'M'+x+','+(y+ry)+' a'+(w/2)+','+ry+' 0 0 1 '+w+',0 v'+(h-2*ry)+' a'+(w/2)+','+ry+' 0 0 1 '+(-w)+',0 z',fill:th.fill,stroke:th.stroke,'stroke-width':1.6});
+  }else{
+    shp=el('rect',{x:x,y:y,width:w,height:h,rx:8,fill:shape==='note'?'#fff':th.fill,stroke:shape==='note'?'#9aa3b0':th.stroke,
+      'stroke-width':1.6,'stroke-dasharray':shape==='note'?'5 4':'none'});
+  }
+  shp.setAttribute('class','shp');g.appendChild(shp);
+  if(shape==='cylinder'){const ry=11;g.appendChild(el('path',{d:'M'+x+','+(y+ry)+' a'+(w/2)+','+ry+' 0 0 0 '+w+',0',fill:'none',stroke:th.stroke,'stroke-width':1.2,'pointer-events':'none'}));}
+  if(shape==='rect'){
+    g.appendChild(el('rect',{x:x,y:y,width:5,height:h,rx:2.5,fill:th.stroke,opacity:.85,'pointer-events':'none'}));
+  }
+  const pc=n.phase&&PHC[n.phase.level];
+  if(pc){
+    if(shape==='rect'||shape==='note')g.appendChild(el('rect',{x:x+w-5,y:y,width:5,height:h,rx:2.5,fill:pc,opacity:.9,'pointer-events':'none'}));
+    else g.appendChild(el('circle',{cx:shape==='diamond'?x+w-8:x+w-10,cy:shape==='diamond'?cy:y+h-12,r:5,fill:pc,stroke:'#fff','stroke-width':1.2,'pointer-events':'none'}));
+  }
+  const dots=(n.uses||[]).filter(function(k){return DOT[k];});
+  const tags=n.tags||[];
+  const lines=n.d||[n.t||n.id];
+  const lh=15, shift=(dots.length||tags.length)?7:0;
+  const maxW=shape==='diamond'?w*0.62:w-18;
+  const top=(shape==='cylinder'?cy+5:cy-shift)-lines.length*lh/2;
+  lines.forEach(function(L0,i){
+    const base=i?10:12;
+    const t=el('text',{x:cx+(shape==='rect'?2:0),y:top+lh*i+11.5,'text-anchor':'middle','pointer-events':'none',
+      'font-size':fit(L0,base,maxW),'font-weight':i?400:700,fill:shape==='note'?'#5c6675':(i?'#4a5563':'#1b2330')});
+    t.textContent=L0;g.appendChild(t);
+  });
+  let dx=x+w-(pc&&shape==='rect'?14:10);
+  dots.slice().reverse().forEach(function(k){
+    g.appendChild(el('circle',{cx:dx,cy:y+h-9,r:3.8,fill:DOT[k],stroke:'#fff','stroke-width':1,'pointer-events':'none'}));dx-=9.5;
+  });
+  let tx=x+(shape==='rect'?9:6);
+  tags.forEach(function(code){
+    const wd=tw(code,8.5)+9;
+    g.appendChild(el('rect',{x:tx,y:y+h-17,width:wd,height:13,rx:3,fill:'#ffe6cc',stroke:'#d79b00','stroke-width':.9,'pointer-events':'none'}));
+    const t=el('text',{x:tx+wd/2,y:y+h-7.5,'text-anchor':'middle','font-size':8.5,'font-weight':700,fill:'#8a5a00','pointer-events':'none'});
+    t.textContent=code;g.appendChild(t);tx+=wd+3;
+  });
+  const clickable=!!(n.role||n.fn||n.sections||n.kv);
+  g.setAttribute('data-id',n.id);
+  if(clickable){
+    g.setAttribute('class','nd ng');g.setAttribute('tabindex','0');
+    g.addEventListener('click',function(){if(!PAN.moved&&!ED.justDragged)open(n.id,g);});
+    g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open(n.id,g);}});
+    GEL[n.id]=g;
+  }else{g.setAttribute('class','ng');}
+  if(ED.on){
+    [['l',x,cy],['r',x+w,cy],['t',cx,y],['b',cx,y+h]].forEach(function(p){
+      const c=el('circle',{cx:p[1],cy:p[2],r:6,fill:'#fff',stroke:'#2563eb','stroke-width':1.8});
+      c.setAttribute('class','pt');c.setAttribute('data-side',p[0]);g.appendChild(c);
+    });
+    const rs=el('rect',{x:x+w-12,y:y+h-12,width:12,height:12,rx:2,fill:'#2563eb'});
+    rs.setAttribute('class','rs');rs.setAttribute('data-resize','1');g.appendChild(rs);
+    g.addEventListener('pointerdown',function(e){nodeDown(e,n);});
+  }
+  gNode.appendChild(g);
+  N[n.id]={x:x,y:y,w:w,h:h,cx:cx,cy:cy};INFO[n.id]=n;
+}
+function renderNodes(){
+  gNode.innerHTML='';Object.keys(GEL).forEach(function(k){delete GEL[k];});cur=null;
+  (DATA.nodes||[]).forEach(drawNode);
+}
+
+/* ---------- edges (routing must match scripts/build.mjs) ---------- */
+function port(ref){
+  const a=ref.split(':'),n=N[a[0]],s=a[1]||'r';
+  if(!n)return null;
+  if(s==='l')return{x:n.x,y:n.cy};
+  if(s==='r')return{x:n.x+n.w,y:n.cy};
+  if(s==='t')return{x:n.cx,y:n.y};
+  return{x:n.cx,y:n.y+n.h};
+}
+function nodeOf(id){return N[id];}
+/* ROUTE-BEGIN：由 scripts/sync-route.mjs 从 scripts/route-block.js 注入 engine.html 与 build.mjs，两处必须一致，勿直接改 */
+/* 直角走线：始终从起点端口的外侧出发、从终点端口的外侧进入，不改用户选的端口。
+   手写 via / mx / my 优先；否则在候选路线中选不穿过两端方块、拐点最少、最短的一条。 */
+function route(e){
+  const G=20;
+  const ia=String(e.from).split(':'),ib=String(e.to).split(':');
+  const sa=ia[1]||'r',sb=ib[1]||'l';
+  let p1=port(e.from),p2=port(e.to);if(!p1||!p2)return null;
+  if(e.d1)p1={x:p1.x+(e.d1[0]||0),y:p1.y+(e.d1[1]||0)};
+  if(e.d2)p2={x:p2.x+(e.d2[0]||0),y:p2.y+(e.d2[1]||0)};
+  if(e.via)return[p1].concat(e.via.map(function(v){return{x:v[0],y:v[1]};})).concat([p2]);
+  if(e.mx!=null)return[p1,{x:e.mx,y:p1.y},{x:e.mx,y:p2.y},p2];
+  if(e.my!=null)return[p1,{x:p1.x,y:e.my},{x:p2.x,y:e.my},p2];
+  const na=nodeOf(ia[0]),nb=nodeOf(ib[0]);
+  /* 外伸段默认 G；若正前方紧挨着另一端的方块，缩短到空隙的一半，避免伸进对方 */
+  function out(p,s,other){let d=G;
+    if(other){
+      if((s==='b'||s==='t')&&p.x>other.x&&p.x<other.x+other.w){const gap=s==='b'?other.y-p.y:p.y-(other.y+other.h);if(gap>=0&&gap<2*G)d=Math.max(1,gap/2);}
+      if((s==='r'||s==='l')&&p.y>other.y&&p.y<other.y+other.h){const gap=s==='r'?other.x-p.x:p.x-(other.x+other.w);if(gap>=0&&gap<2*G)d=Math.max(1,gap/2);}
+    }
+    return{x:p.x+(s==='r'?d:s==='l'?-d:0),y:p.y+(s==='b'?d:s==='t'?-d:0)};}
+  const o=out(p1,sa,nb),q=out(p2,sb,na);
+  const boxes=[na,nb].filter(Boolean);
+  const L=Math.min.apply(null,boxes.map(function(b){return b.x;}).concat([o.x,q.x]))-G;
+  const R=Math.max.apply(null,boxes.map(function(b){return b.x+b.w;}).concat([o.x,q.x]))+G;
+  const T=Math.min.apply(null,boxes.map(function(b){return b.y;}).concat([o.y,q.y]))-G;
+  const B=Math.max.apply(null,boxes.map(function(b){return b.y+b.h;}).concat([o.y,q.y]))+G;
+  const mx=(o.x+q.x)/2,my=(o.y+q.y)/2;
+  /* 同为 4 点时先出现的优先：中线折线在前，保持 mx / my 默认取中点的旧行为 */
+  const mids=[
+    [{x:mx,y:o.y},{x:mx,y:q.y}],[{x:o.x,y:my},{x:q.x,y:my}],
+    [{x:q.x,y:o.y}],[{x:o.x,y:q.y}],
+    [{x:R,y:o.y},{x:R,y:q.y}],[{x:L,y:o.y},{x:L,y:q.y}],
+    [{x:o.x,y:B},{x:q.x,y:B}],[{x:o.x,y:T},{x:q.x,y:T}]
+  ];
+  function simplify(pts){
+    const a=[];pts.forEach(function(p){const l=a[a.length-1];if(!l||l.x!==p.x||l.y!==p.y)a.push(p);});
+    for(let i=a.length-2;i>0;i--){const u=a[i-1],v=a[i],w=a[i+1];
+      if((u.x===v.x&&v.x===w.x)||(u.y===v.y&&v.y===w.y))a.splice(i,1);}
+    return a;
+  }
+  function hits(u,v,b){
+    const x0=b.x+1,x1=b.x+b.w-1,y0=b.y+1,y1=b.y+b.h-1;
+    if(u.y===v.y)return u.y>y0&&u.y<y1&&Math.max(u.x,v.x)>x0&&Math.min(u.x,v.x)<x1;
+    return u.x>x0&&u.x<x1&&Math.max(u.y,v.y)>y0&&Math.min(u.y,v.y)<y1;
+  }
+  function ok(pts){
+    for(let i=0;i<pts.length-1;i++){const u=pts[i],v=pts[i+1];
+      if(u.x!==v.x&&u.y!==v.y)return false;
+      for(let k=0;k<boxes.length;k++)if(hits(u,v,boxes[k]))return false;}
+    /* 离开起点、进入终点的方向必须与端口朝向一致 */
+    const s1=pts[1],s2=pts[pts.length-2];
+    const dirOk=function(p,n,s){return s==='r'?n.x>p.x:s==='l'?n.x<p.x:s==='b'?n.y>p.y:n.y<p.y;};
+    return dirOk(p1,s1,sa)&&dirOk(p2,s2,sb);
+  }
+  function len(pts){let s=0;for(let i=0;i<pts.length-1;i++)s+=Math.abs(pts[i].x-pts[i+1].x)+Math.abs(pts[i].y-pts[i+1].y);return s;}
+  let best=null;
+  mids.forEach(function(m){
+    const pts=simplify([p1,o].concat(m,[q,p2]));
+    if(pts.length<2||!ok(pts))return;
+    if(!best||pts.length<best.length||(pts.length===best.length&&len(pts)<len(best)))best=pts;
+  });
+  return best||simplify([p1,o,{x:R,y:o.y},{x:R,y:q.y},q,p2]);
+}
+/* ROUTE-END */
+function renderEdges(){
+gEdge.innerHTML='';
+(DATA.edges||[]).forEach(function(e,idx){
+  const pts=route(e);if(!pts)return;
+  const d=pts.map(function(p,i){return(i?'L':'M')+p.x+','+p.y;}).join(' ');
+  const selE=ED.on&&ED.sel===idx;
+  const col=selE?'#2563eb':(e.bold?'#c2410c':(e.dash?'#5a9c56':'#5a6472'));
+  gEdge.appendChild(el('path',{d:d,fill:'none',stroke:col,'stroke-width':(e.bold?2.6:(e.dash?1.2:1.5))+(selE?1.2:0),
+    'stroke-dasharray':e.dash?'6 5':'none','marker-end':'url(#'+(e.bold?'arb':(e.dash?'ard':'ar'))+')',opacity:e.dash?.9:1}));
+  if(ED.on){
+    const hit=el('path',{d:d});hit.setAttribute('class','ehit');
+    hit.addEventListener('pointerdown',function(ev){ev.stopPropagation();});
+    hit.addEventListener('click',function(ev){ev.stopPropagation();selectEdge(idx);});
+    hit.addEventListener('dblclick',function(ev){ev.stopPropagation();selectEdge(idx);editLabel();});
+    gEdge.appendChild(hit);
+  }
+  if(e.label){
+    const m=e.lp!=null?e.lp:Math.max(0,Math.floor(pts.length/2)-1);
+    const A=pts[m],B=pts[m+1]||pts[m];
+    const lx=e.lx!=null?e.lx:(A.x+B.x)/2, ly=e.ly!=null?e.ly:(A.y+B.y)/2;
+    const wpx=tw(e.label,11)+12;
+    gEdge.appendChild(el('rect',{x:lx-wpx/2,y:ly-9,width:wpx,height:18,rx:4,fill:'#fff',stroke:'#e2e6ee'}));
+    const t=el('text',{x:lx,y:ly+4,'text-anchor':'middle','font-size':11,fill:'#48525f'});
+    t.textContent=e.label;gEdge.appendChild(t);
+  }
+});
+(DATA.labels||[]).forEach(function(l){freeLabel(l);});
+}
+let cur=null;
+(DATA.nodes||[]).forEach(syncPhase);
+renderNodes();renderEdges();
+
+/* ---------- panel ---------- */
+const P={badge:$('p-badge'),title:$('p-title'),sub:$('p-sub'),body:$('p-body')};
+function chip(id){const d=INFO[id];if(!d)return '';
+  const c=DOT[id]?'<span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:'+DOT[id]+'"></span>':'';
+  return '<span class="chip" data-go="'+esc(id)+'">'+c+esc(d.t||id)+'</span>';}
+function focus(id){
+  const rel={};rel[id]=1;(USE[id]||[]).forEach(function(k){rel[k]=1;});(REV[id]||[]).forEach(function(k){rel[k]=1;});
+  const only=Object.keys(rel).length>1;
+  Object.keys(GEL).forEach(function(k){GEL[k].style.opacity=(!only||rel[k])?1:.16;});
+  gEdge.style.opacity=only?.3:1;
+}
+function restore(){applyPhase();}
+function open(id,g){
+  const d=INFO[id];if(!d)return;g=g||GEL[id];if(!g)return;
+  if(cur)cur.classList.remove('sel');cur=g;g.classList.add('sel');
+  const th=CAT[d.cat]||{fill:'#eef1f5',stroke:'#68758a',name:''};
+  P.badge.textContent=(th.name||'')+(d.phase&&d.phase.level?'　/　'+d.phase.level:'');
+  P.badge.style.color=th.stroke;P.badge.style.borderColor=th.stroke;P.badge.style.background=th.fill;
+  P.title.textContent=d.t||id;P.sub.textContent=d.s||'';
+  let h='';
+  if(d.kv&&d.kv.length)h+='<table class="kv">'+d.kv.map(function(r){return '<tr><th>'+esc(r[0])+'</th><td>'+r[1]+'</td></tr>';}).join('')+'</table>';
+  if(d.role)h+='<h4>■ '+esc(PL.role)+'</h4><p>'+d.role+'</p>';
+  if(d.fn&&d.fn.length)h+='<h4>■ '+esc(PL.fn)+'</h4><ul>'+d.fn.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>';
+  (d.sections||[]).forEach(function(s){
+    h+='<h4>■ '+esc(s.h)+'</h4>'+(s.items?'<ul>'+s.items.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>':'<p>'+(s.text||'')+'</p>');
+  });
+  if(d.io)h+='<h4>■ '+esc(PL.io)+'</h4><div class="io">'+d.io+'</div>';
+  if(USE[id])h+='<h4>■ '+esc(L.uses)+'</h4><div class="chips">'+USE[id].map(chip).join('')+'</div>';
+  if(REV[id])h+='<h4>■ '+esc(L.usedBy)+'</h4><div class="chips">'+REV[id].map(chip).join('')+'</div>';
+  if(PH&&d.phase&&d.phase.text)h+='<h4>■ '+esc(fmt(L.phase,PH.label))+'</h4><p><b style="color:'+(PHC[d.phase.level]||'#333')+'">'+esc(d.phase.level)+'</b>　'+d.phase.text+'</p>';
+  if(d.rel)h+='<h4>■ '+esc(PL.rel)+'</h4><p>'+d.rel+'</p>';
+  P.body.innerHTML=h;
+  P.body.querySelectorAll('[data-go]').forEach(function(c){c.addEventListener('click',function(){const t=c.getAttribute('data-go');open(t);centerOn(t);});});
+  document.body.classList.add('open');
+  focus(id);
+}
+function close(){document.body.classList.remove('open');if(cur){cur.classList.remove('sel');cur=null;}restore();}
+$('close').addEventListener('click',close);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+svg.addEventListener('click',function(e){if(e.target===svg&&!PAN.moved)close();});
+
+/* ---------- pan & zoom (no pointer capture: it would swallow node clicks) ---------- */
+/* 画面は固定 viewBox、表示倍率 Z で svg の実寸を決め、board のスクロールで移動する（全体が収まらない時はスクロールバー） */
+const board=document.querySelector('.board');
+let Z=1;
+function bw(){return board.clientWidth||800;}
+function bh(){return board.clientHeight||500;}
+function setZ(z){Z=Math.max(0.2,Math.min(3,z));svg.setAttribute('width',Math.round(CW*Z));svg.setAttribute('height',Math.round(CH*Z));}
+function scrollToSvg(x,y){board.scrollLeft=x*Z-bw()/2;board.scrollTop=y*Z-bh()/2;}
+function fitWidth(){setZ(bw()/CW);board.scrollLeft=0;board.scrollTop=0;}
+function fitAll(){setZ(Math.min(bw()/CW,bh()/CH));board.scrollLeft=0;board.scrollTop=0;}
+function showRect(b){setZ(Math.min(bw()/b[2],bh()/b[3]));board.scrollLeft=b[0]*Z;board.scrollTop=b[1]*Z;}
+function zoomAt(f,cx,cy){const r=board.getBoundingClientRect(),sr=svg.getBoundingClientRect();
+  const vx=sr.left+cx*Z-r.left,vy=sr.top+cy*Z-r.top;setZ(Z/f);
+  const off=Math.max(0,(bw()-CW*Z)/2);board.scrollLeft=cx*Z+off-vx;board.scrollTop=cy*Z-vy;}
+function centerOn(id){const n=N[id];if(!n)return;scrollToSvg(n.cx,n.cy);}
+function toSvg(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+const PAN={on:false,moved:false};
+function onMove(e){if(!PAN.on)return;const dx=e.clientX-PAN.sx,dy=e.clientY-PAN.sy;
+  if(!PAN.moved&&Math.abs(dx)+Math.abs(dy)<5)return;PAN.moved=true;
+  board.scrollLeft=PAN.ox-dx;board.scrollTop=PAN.oy-dy;}
+function endPan(){if(!PAN.on)return;PAN.on=false;svg.classList.remove('grabbing');
+  window.removeEventListener('pointermove',onMove);window.removeEventListener('pointerup',endPan);window.removeEventListener('pointercancel',endPan);}
+svg.addEventListener('pointerdown',function(e){if(e.button!==0)return;
+  if(ED.on&&ED.sel>=0){ED.sel=-1;renderEdges();syncEditBtns();}
+  PAN.on=true;PAN.moved=false;PAN.sx=e.clientX;PAN.sy=e.clientY;PAN.ox=board.scrollLeft;PAN.oy=board.scrollTop;
+  svg.classList.add('grabbing');window.addEventListener('pointermove',onMove);window.addEventListener('pointerup',endPan);window.addEventListener('pointercancel',endPan);});
+svg.addEventListener('wheel',function(e){if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();const p=toSvg(e);zoomAt(e.deltaY>0?1.18:1/1.18,p.x,p.y);},{passive:false});
+
+/* ---------- layout editing ---------- */
+const SNAP=10;
+function snap(v){return Math.round(v/SNAP)*SNAP;}
+function pushHist(){ED.hist.push(JSON.stringify({nodes:DATA.nodes,edges:DATA.edges}));if(ED.hist.length>100)ED.hist.shift();setTimeout(syncEditBtns,0);}
+function markDirty(){ED.dirty=true;setStatus('');}
+function redraw(){renderNodes();renderEdges();applyPhase();renderStats();renderTables();}
+function undo(){if(!ED.hist.length)return;const s=JSON.parse(ED.hist.pop());DATA.nodes=s.nodes;DATA.edges=s.edges;
+  Object.keys(INFO).forEach(function(k){delete INFO[k];});ED.sel=-1;markDirty();redraw();syncEditBtns();}
+/* 端点が動いた線は手書きの拐点が合わなくなるので、自動の直角走线に戻す */
+function resetRoute(e){['via','mx','my','d1','d2','lx','ly','lp'].forEach(function(k){delete e[k];});}
+function nodeDown(e,n){
+  if(!ED.on||e.button!==0)return;e.stopPropagation();
+  const side=e.target.getAttribute&&e.target.getAttribute('data-side');
+  const p=toSvg(e);
+  if(side){ED.link={from:n.id+':'+side,sx:p.x,sy:p.y};
+    const a=port(ED.link.from);ED.link.sx=a.x;ED.link.sy=a.y;}
+  else if(e.target.getAttribute&&e.target.getAttribute('data-resize'))ED.drag={n:n,ow:n.w,px:p.x,py:p.y,moved:false,resize:true};
+  else ED.drag={n:n,ox:n.x,oy:n.y,px:p.x,py:p.y,moved:false};
+  window.addEventListener('pointermove',editMove);window.addEventListener('pointerup',editUp);
+}
+function editMove(e){
+  const p=toSvg(e);
+  if(ED.drag){const d=ED.drag;
+    if(!d.moved){if(Math.abs(p.x-d.px)+Math.abs(p.y-d.py)<4)return;d.moved=true;pushHist();
+      (DATA.edges||[]).forEach(function(ed){if(ed.from.split(':')[0]===d.n.id||ed.to.split(':')[0]===d.n.id)resetRoute(ed);});}
+    if(d.resize){const nw=Math.max(80,Math.min(CW-d.n.x,snap(d.ow+p.x-d.px)));
+      if(nw!==d.n.w){d.n.w=nw;renderNodes();renderEdges();}return;}
+    const nx=snap(d.ox+p.x-d.px),ny=snap(d.oy+p.y-d.py);
+    if(nx===d.n.x&&ny===d.n.y)return;
+    d.n.x=Math.max(0,Math.min(CW-d.n.w,nx));d.n.y=Math.max(0,Math.min(CH-d.n.h,ny));renderNodes();renderEdges();}
+  else if(ED.link){gTmp.innerHTML='';
+    gTmp.appendChild(el('path',{d:'M'+ED.link.sx+','+ED.link.sy+' L'+p.x+','+p.y,stroke:'#2563eb','stroke-width':1.8,'stroke-dasharray':'5 4',fill:'none'}));}
+}
+function editUp(e){
+  window.removeEventListener('pointermove',editMove);window.removeEventListener('pointerup',editUp);
+  if(ED.drag){if(ED.drag.moved){syncPhase(ED.drag.n);renderNodes();renderEdges();renderStats();renderTables();markDirty();ED.justDragged=true;setTimeout(function(){ED.justDragged=false;},0);applyPhase();}ED.drag=null;}
+  else if(ED.link){gTmp.innerHTML='';
+    const hitEl=document.elementFromPoint(e.clientX,e.clientY),g=hitEl&&hitEl.closest&&hitEl.closest('.ng');
+    const fromId=ED.link.from.split(':')[0];
+    if(g&&g.getAttribute('data-id')!==fromId){
+      const id=g.getAttribute('data-id'),n=N[id],p=toSvg(e);
+      let side=hitEl.getAttribute('data-side');
+      if(!side){const dx=(p.x-n.cx)/n.w,dy=(p.y-n.cy)/n.h;side=Math.abs(dx)>Math.abs(dy)?(dx<0?'l':'r'):(dy<0?'t':'b');}
+      pushHist();(DATA.edges=DATA.edges||[]).push({from:ED.link.from,to:id+':'+side});
+      ED.sel=DATA.edges.length-1;markDirty();renderEdges();syncEditBtns();
+      ED.justDragged=true;setTimeout(function(){ED.justDragged=false;},0);
+    }
+    ED.link=null;}
+}
+function selectEdge(i){ED.sel=i;renderEdges();syncEditBtns();}
+function selEdge(){return ED.sel>=0?DATA.edges[ED.sel]:null;}
+function delEdge(){if(!selEdge())return;pushHist();DATA.edges.splice(ED.sel,1);ED.sel=-1;markDirty();renderEdges();syncEditBtns();}
+function toggleEdge(k){const e=selEdge();if(!e)return;pushHist();
+  if(k==='dash'){e.dash=!e.dash;if(e.dash)delete e.bold;}else{e.bold=!e.bold;if(e.bold)delete e.dash;}
+  if(!e.dash)delete e.dash;if(!e.bold)delete e.bold;markDirty();renderEdges();}
+function editLabel(){const e=selEdge();if(!e)return;const v=window.prompt(L.labelPrompt,e.label||'');if(v===null)return;
+  pushHist();if(v.trim()){e.label=v.trim();}else delete e.label;delete e.lx;delete e.ly;delete e.lp;markDirty();renderEdges();}
+function download(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);}
+function save(){
+  const text=JSON.stringify(DATA,null,2)+'\n';
+  const page=decodeURIComponent(location.pathname.split('/').pop()||'diagram.html');
+  fetch('/__save?page='+encodeURIComponent(page),{method:'POST',headers:{'Content-Type':'application/json'},body:text})
+    .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+    .then(function(res){ED.dirty=false;
+      if(res.warnings&&res.warnings.length){console.warn(res.warnings.join('\n'));setStatus(fmt(L.savedWarn,res.warnings.length));}
+      else setStatus(L.saved);})
+    .catch(function(){download(page.replace(/\.html?$/,'')+'.data.json',text);ED.dirty=false;setStatus(L.saveFail,true);});
+}
+document.addEventListener('keydown',function(e){
+  if(!ED.on)return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
+  else if((e.key==='Delete'||e.key==='Backspace')&&ED.sel>=0&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delEdge();}
+});
+window.addEventListener('beforeunload',function(e){if(ED.dirty){e.preventDefault();e.returnValue=L.leave;}});
+
+/* ---------- toolbar ---------- */
+const tools=$('tools');
+function btn(label,fn,cls){const b=document.createElement('button');b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',fn);tools.appendChild(b);return b;}
+function sep(){const s=document.createElement('div');s.className='sep';tools.appendChild(s);}
+const navBtns=[];
+function nav(label,fn,pri){const b=btn(label,function(){fn();navBtns.forEach(function(o){o.classList.remove('pri');});b.classList.add('pri');},pri?'pri':'');navBtns.push(b);}
+nav(L.fitw,fitWidth,true);nav(L.all,fitAll);
+const FOCUS=!!(PH&&PH.focusButtons);
+if(!FOCUS&&DATA.bands&&DATA.bands.length){sep();DATA.bands.forEach(function(b){nav(b.label,function(){showRect(b.rect);});});}
+function zoomCenter(f){const off=Math.max(0,(bw()-CW*Z)/2);zoomAt(f,(board.scrollLeft+bw()/2-off)/Z,(board.scrollTop+bh()/2)/Z);}
+sep();btn('＋',function(){zoomCenter(1/1.25);});btn('−',function(){zoomCenter(1.25);});
+let phaseOn=false,phaseBtn=null,focusLevel=null;
+/* 强调某一期：该期方块保持原样，其余变淡（phase.focusButtons） */
+function applyPhase(){
+  const dim=(PH&&PH.dim)||[];
+  Object.keys(GEL).forEach(function(k){const n=INFO[k],lv=n.phase&&n.phase.level;
+    const faded=focusLevel?lv!==focusLevel:(phaseOn&&lv&&dim.indexOf(lv)>=0);
+    GEL[k].style.opacity=faded?.14:1;});
+  gEdge.style.opacity=(phaseOn||focusLevel)?.35:1;
+}
+if(FOCUS){sep();const fbtns=[];
+  (PH.levels||[]).forEach(function(lv){
+    const b=btn(fmt(L.focus,prettyKey(lv.key)),function(){
+      focusLevel=focusLevel===lv.key?null:lv.key;
+      fbtns.forEach(function(o){o.classList.toggle('pri',o===b&&focusLevel===lv.key);});
+      if(cur){cur.classList.remove('sel');cur=null;document.body.classList.remove('open');}applyPhase();});
+    b.style.borderLeft='4px solid '+(lv.color||'#8b95a3');fbtns.push(b);
+  });
+}
+if(!FOCUS&&PH&&PH.dim&&PH.dim.length){sep();phaseBtn=btn(fmt(L.toggleOn,PH.label),function(){
+  phaseOn=!phaseOn;phaseBtn.classList.toggle('pri',phaseOn);phaseBtn.textContent=phaseOn?L.toggleOff:fmt(L.toggleOn,PH.label);
+  if(cur){cur.classList.remove('sel');cur=null;document.body.classList.remove('open');}applyPhase();});}
+const tip=document.createElement('span');tip.className='tip';tip.textContent=L.tip;tools.appendChild(tip);
+fitWidth();requestAnimationFrame(fitWidth);window.addEventListener('load',fitWidth);
+
+/* edit toolbar */
+const etools=$('edittools');
+const EDITABLE=!!DATA.editable;
+if(!EDITABLE)etools.remove();
+function ebtn(label,fn){if(!EDITABLE)return document.createElement('button');const b=document.createElement('button');b.textContent=label;b.addEventListener('click',fn);etools.appendChild(b);return b;}
+const editBtn=EDITABLE&&ebtn(L.edit,function(){
+  ED.on=!ED.on;ED.sel=-1;document.body.classList.toggle('editing',ED.on);
+  editBtn.textContent=ED.on?L.editDone:L.edit;editBtn.classList.toggle('edit-on',ED.on);
+  $('hint').textContent=ED.on?L.editHint:(meta.hint||L.hint);
+  if(cur)close();redraw();syncEditBtns();
+});
+const EB={undo:ebtn(L.undo,undo),del:ebtn(L.delEdge,delEdge),dash:ebtn(L.dash,function(){toggleEdge('dash');}),
+  bold:ebtn(L.bold,function(){toggleEdge('bold');}),label:ebtn(L.label,editLabel),save:ebtn(L.save,save)};
+EB.save.className='pri';
+const status=document.createElement('span');status.className='status';etools.appendChild(status);
+function setStatus(t,isErr){status.textContent=t||'';status.classList.toggle('err',!!isErr);}
+function syncEditBtns(){
+  if(!EDITABLE)return;
+  Object.keys(EB).forEach(function(k){EB[k].hidden=!ED.on;});
+  const s=ED.sel>=0;[EB.del,EB.dash,EB.bold,EB.label].forEach(function(b){b.disabled=!s;});
+  EB.undo.disabled=!ED.hist.length;
+}
+syncEditBtns();
+
+/* ---------- legends ---------- */
+const usedCats={};(DATA.nodes||[]).forEach(function(n){if(n.cat)usedCats[n.cat]=1;});
+$('catlegend').innerHTML=Object.keys(CAT).filter(function(k){return usedCats[k];}).map(function(k){
+  return '<span><i style="background:'+CAT[k].fill+';border-color:'+CAT[k].stroke+'"></i>'+esc(CAT[k].name||k)+'</span>';}).join('');
+if(PH){$('phaselegend').innerHTML='<span>'+esc(fmt(L.phaseLegend,PH.label))+'</span>'+(PH.levels||[]).map(function(l){
+  return '<span><i style="background:'+l.color+';border-color:'+l.color+'"></i>'+esc(l.key)+(l.desc?'（'+esc(l.desc)+'）':'')+'</span>';}).join('');}
+else $('phaselegend').remove();
+let ex='';
+const dotIds=Object.keys(DOT);
+if(dotIds.length)ex+='<span>'+esc(L.dotLegend)+'</span>'+dotIds.map(function(k){return '<span><span class="dot" style="background:'+DOT[k]+'"></span>'+esc(INFO[k].t||k)+'</span>';}).join('');
+if(DATA.tagLegend){ex+=(ex?'<span>｜</span>':'')+'<span>'+esc(L.tagLegend)+'</span>'+Object.keys(DATA.tagLegend).map(function(k){
+  return '<span><span class="tagchip">'+esc(k)+'</span>'+esc(DATA.tagLegend[k])+'</span>';}).join('');}
+if(ex)$('extralegend').innerHTML=ex;else $('extralegend').remove();
+
+/* ---------- phase stats (derived from node positions & panel data) ---------- */
+function strip(s){return String(s==null?'':s).replace(/<[^>]*>/g,'').trim();}
+function phaseLevels(){return (PH&&PH.levels)||[];}
+function phaseCol(n){const T=DATA.timeline;return T?Math.floor((n.x+n.w/2-T.x0)/T.colW):-1;}
+/* 方块所在的时间轴列决定它属于第几期（拖动后自动更新） */
+function prettyKey(k){return String(k).replace(/^第\s*(\d+)\s*期$/,'第 $1 期');}
+function syncPhase(n){
+  if(!PH||!PH.byColumn||!DATA.timeline||!n.phase)return;
+  const lv=phaseLevels()[phaseCol(n)];if(!lv||lv.key===n.phase.level)return;
+  const old=n.phase.level;n.phase.level=lv.key;
+  /* 副标题原本就是期名时才跟着改，避免覆盖自定义副标题 */
+  if(n.s===old||n.s===prettyKey(old))n.s=prettyKey(lv.key);
+}
+function periodOf(i){const T=DATA.timeline,lv=phaseLevels()[i];if(!T||!T.labels[i])return '';
+  return String(T.labels[i]).replace(lv?lv.key:'','').trim();}
+function screensOf(n){
+  const out=[],re=/<tr><td[^>]*>([\s\S]*?)<\/td><td[^>]*>([\s\S]*?)<\/td>/g;let m;
+  const mark=(DATA.stats&&DATA.stats.newMark)||L.newMark;
+  while((m=re.exec(n.io||''))){const nm=strip(m[2]),isNew=nm.indexOf(mark)>=0;
+    out.push({side:strip(m[1]),name:isNew?nm.replace(new RegExp('[（(]?\\s*'+mark.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[）)]?$'),'').trim():nm,isNew:isNew});}
+  return out;
+}
+function effortOf(n){const key=(DATA.stats&&DATA.stats.effortKey)||L.effortKey;const r=(n.kv||[]).find(function(k){return k[0]===key;});const m=r&&String(r[1]).match(/([\d.]+)/);return m?parseFloat(m[1]):0;}
+function nodesOfLevel(key){
+  return (DATA.nodes||[]).filter(function(n){return n.phase&&n.phase.level===key;})
+    .sort(function(a,b){return a.y-b.y||a.x-b.x;});
+}
+function phaseStats(){
+  return phaseLevels().map(function(lv,i){
+    const ns=nodesOfLevel(lv.key),seen={};let screens=0,fresh=0,effort=0;
+    ns.forEach(function(n){effort+=effortOf(n);screensOf(n).forEach(function(s){const k=s.side+'|'+s.name;if(seen[k])return;seen[k]=1;screens++;if(s.isNew)fresh++;});});
+    return {lv:lv,i:i,nodes:ns,screens:screens,fresh:fresh,effort:Math.round(effort*10)/10,period:periodOf(i)};
+  });
+}
+function fmtNum(v){return (Math.round(v*10)/10).toString();}
+
+/* ---------- workload chart ---------- */
+const statsWrap=$('stats');
+function renderStats(){
+  if(!statsWrap)return;
+  if(!DATA.stats||!PH){statsWrap.remove();return;}
+  const S=phaseStats(),W=760,H=250,pl=44,pr=16,pt=26,pb=48;
+  const maxV=Math.max(1,Math.max.apply(null,S.map(function(s){return s.screens;})));
+  const step=maxV<=10?2:maxV<=25?5:maxV<=60?10:20,top=Math.ceil(maxV/step)*step;
+  const iw=W-pl-pr,ih=H-pt-pb,slot=iw/S.length,bwid=Math.min(56,slot*0.46);
+  let g='';
+  for(let v=0;v<=top;v+=step){const y=pt+ih-ih*v/top;
+    g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="'+(v?'#eef1f6':'#c9d1dc')+'"/>'+
+       '<text x="'+(pl-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="#6b7585">'+v+'</text>';}
+  S.forEach(function(s){
+    const cx=pl+slot*(s.i+.5),h=ih*s.screens/top,x=cx-bwid/2,y=pt+ih-h,r=Math.min(4,h/2);
+    const col=s.lv.color||'#2563eb';
+    if(s.screens>0)g+='<path d="M'+x+','+(pt+ih)+' V'+(y+r)+' Q'+x+','+y+' '+(x+r)+','+y+' H'+(x+bwid-r)+' Q'+(x+bwid)+','+y+' '+(x+bwid)+','+(y+r)+' V'+(pt+ih)+' Z" fill="'+col+'"/>';
+    g+='<text x="'+cx+'" y="'+(y-7)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#1b2330">'+s.screens+'</text>';
+    g+='<text x="'+cx+'" y="'+(pt+ih+17)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#33404f">'+esc(s.lv.key)+'</text>';
+    g+='<text x="'+cx+'" y="'+(pt+ih+33)+'" text-anchor="middle" font-size="10.5" fill="#6b7585">'+esc(s.period)+'</text>';
+    g+='<rect class="hit" data-i="'+s.i+'" x="'+(pl+slot*s.i)+'" y="'+pt+'" width="'+slot+'" height="'+ih+'" fill="transparent"/>';
+  });
+  statsWrap.innerHTML='<h3>'+esc(DATA.stats.title||'')+'</h3>'+(DATA.stats.caption?'<p class="cap">'+DATA.stats.caption+'</p>':'')+
+    '<div class="chartbox"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(DATA.stats.title||'')+'">'+
+    '<text x="'+pl+'" y="12" font-size="11" fill="#6b7585">'+esc((DATA.stats&&DATA.stats.yLabel)||L.chartY)+'</text>'+g+'</svg><div class="ctip" hidden></div></div>';
+  const tipEl=statsWrap.querySelector('.ctip'),box=statsWrap.querySelector('.chartbox');
+  statsWrap.querySelectorAll('.hit').forEach(function(rc){
+    rc.addEventListener('mousemove',function(ev){const s=S[+rc.getAttribute('data-i')],br=box.getBoundingClientRect();
+      tipEl.innerHTML='<b>'+esc(s.lv.key)+'</b>　'+esc(s.period)+'<br>'+esc(L.tipScreens)+'　<b>'+s.screens+'</b>（'+esc(L.tipNew)+' '+s.fresh+'）<br>'+esc(L.tipFeatures)+'　'+s.nodes.length+'<br>'+esc(L.tipEffort)+'　'+esc(fmt(L.effortFmt,fmtNum(s.effort)))+(s.lv.effort?'<br>'+esc(L.tipActual)+'　'+esc(s.lv.effort):'');
+      tipEl.hidden=false;tipEl.style.left=Math.min(br.width-190,ev.clientX-br.left+14)+'px';tipEl.style.top=(ev.clientY-br.top+10)+'px';});
+    rc.addEventListener('mouseleave',function(){tipEl.hidden=true;});
+  });
+}
+
+/* ---------- tables ---------- */
+const tbWrap=$('tables');
+function rowClick(root){root.querySelectorAll('tr[data-go]').forEach(function(tr){tr.addEventListener('click',function(){
+  const id=tr.getAttribute('data-go');if(!GEL[id]&&!N[id])return;if(GEL[id])open(id);centerOn(id);
+  document.querySelector('.board').scrollIntoView({behavior:'smooth',block:'center'});});});}
+function groupIds(g){return g.level?nodesOfLevel(g.level).map(function(n){return n.id;}):(g.ids||[]);}
+function groupLabel(g){
+  if(g.label)return g.label;const i=phaseLevels().findIndex(function(l){return l.key===g.level;});const lv=phaseLevels()[i];
+  return lv?lv.key+'｜'+(lv.goal||'')+'（'+periodOf(i)+'）':'';
+}
+function renderTables(){
+tbWrap.innerHTML='';
+(DATA.tables||[]).forEach(function(tb){
+  const box=document.createElement('div');box.className='mx';
+  let h='<h3>'+esc(tb.title||'')+'</h3>'+(tb.caption?'<p class="cap">'+tb.caption+'</p>':'');
+  if(tb.type==='phaseSummary'){
+    const C=tb.columns||L.sumCols;
+    h+='<table><thead><tr>'+C.map(function(c,i){return '<th'+(i>=3&&i<=5?' class="c"':'')+'>'+c+'</th>';}).join('')+'</tr></thead><tbody>';
+    phaseStats().forEach(function(s){
+      const go=s.nodes[0]?' data-go="'+esc(s.nodes[0].id)+'"':'';
+      h+='<tr'+go+'><td class="svc"><b style="color:'+(s.lv.color||'#333')+'">'+esc(s.lv.key)+'</b></td><td>'+esc(s.period)+'</td><td>'+esc(s.lv.goal||'')+'</td>'+
+        '<td class="c">'+s.nodes.length+'</td><td class="c">'+s.screens+'（'+s.fresh+'）</td>'+
+        '<td class="c">'+esc(s.lv.effort||'—')+' / '+esc(fmt(L.effortFmt,fmtNum(s.effort)))+'</td>'+
+        '<td>'+(s.nodes.map(function(n){return esc(n.t||n.id);}).join('、')||'—')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }else if(tb.type==='phase'){
+    h+='<table><thead><tr><th style="width:240px">'+esc(tb.columns?tb.columns[0]:L.component)+'</th><th style="width:90px">'+esc(tb.columns?tb.columns[1]:L.level)+'</th><th>'+esc(tb.columns?tb.columns[2]:L.detail)+'</th></tr></thead><tbody>';
+    (tb.groups||[]).forEach(function(g){h+='<tr class="grp"><td colspan="3">'+esc(groupLabel(g))+'</td></tr>';
+      groupIds(g).forEach(function(id){const n=INFO[id];if(!n||!n.phase)return;
+        h+='<tr data-go="'+esc(id)+'"><td class="svc">'+esc(n.t||id)+'</td><td><b style="color:'+(PHC[n.phase.level]||'#333')+'">'+esc(n.phase.level)+'</b></td><td>'+(n.phase.text||'')+'</td></tr>';});});
+    h+='</tbody></table>';
+  }else if(tb.type==='uses'){
+    const T=tb.targets||[];
+    h+='<table><thead><tr><th>'+esc(tb.firstColumn||L.component)+'</th>'+T.map(function(k){return '<th class="c">'+esc((INFO[k]&&INFO[k].t)||k)+'</th>';}).join('')+'</tr></thead><tbody>';
+    (tb.groups||[]).forEach(function(g){h+='<tr class="grp"><td colspan="'+(T.length+1)+'">'+esc(g.label)+'</td></tr>';
+      g.ids.forEach(function(id){const n=INFO[id];if(!n)return;const u=USE[id]||[];
+        h+='<tr data-go="'+esc(id)+'"><td>'+esc(n.t||id)+(n.s?'<span style="color:#8b95a3"> / '+esc(n.s)+'</span>':'')+'</td>'+
+          T.map(function(k){return '<td class="c">'+(u.indexOf(k)>=0?'<span style="color:'+(DOT[k]||'#2e7d32')+';font-size:15px">●</span>':'<span style="color:#dfe4ec">–</span>')+'</td>';}).join('')+'</tr>';});});
+    h+='</tbody></table>';
+  }else{
+    const C=tb.columns||[];
+    h+='<table><thead><tr>'+C.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+'</tr></thead><tbody>';
+    (tb.rows||[]).forEach(function(r){
+      if(r.group){h+='<tr class="grp"><td colspan="'+C.length+'">'+esc(r.group)+'</td></tr>';return;}
+      h+='<tr'+(r.go?' data-go="'+esc(r.go)+'"':'')+'>'+(r.cells||[]).map(function(c,i){return '<td'+(i===0?' class="svc"':'')+'>'+c+'</td>';}).join('')+'</tr>';});
+    h+='</tbody></table>';
+  }
+  box.innerHTML=h;tbWrap.appendChild(box);rowClick(box);
+});
+}
+renderStats();renderTables();
+
+/* ---------- notes ---------- */
+const nWrap=$('notes');
+(DATA.notes||[]).forEach(function(nt){
+  const d=document.createElement('div');d.className='note'+(nt.wide?' wide':'');
+  const tag=nt.ordered?'ol':'ul';
+  d.innerHTML='<h3>'+esc(nt.title||'')+'</h3><'+tag+'>'+(nt.items||[]).map(function(x){return '<li>'+x+'</li>';}).join('')+'</'+tag+'>';
+  nWrap.appendChild(d);
+});
+if(!(DATA.notes||[]).length)nWrap.remove();
+})();
+</script>
+</body>
+</html>
