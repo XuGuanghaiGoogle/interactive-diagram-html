@@ -19,9 +19,12 @@ A Claude Code skill that turns **architecture diagrams, process flows, developme
 | File | Contents |
 | --- | --- |
 | [examples/dev-plan.html](examples/dev-plan.html) | Development plan: 6 sprints, 6 lanes, 4 milestones, critical path, P0 / P1 / P2 scope toggle, feature list |
+| [examples/dev-plan-editable.html](examples/dev-plan-editable.html) | Layout editor: the development plan with editing enabled (drag, resize, connect; Save downloads the JSON in the demo) |
 | [examples/system-architecture.html](examples/system-architecture.html) | System architecture: container layout, store-usage dots, component × store matrix, M0 / PoC toggle |
 
-GitHub does not preview HTML files. Download them and open them in a browser.
+**Live demo:** https://xuguanghaigoogle.github.io/interactive-diagram-html/
+
+GitHub does not preview HTML files. Open the live demo, or download the files and open them in a browser.
 
 ## Installation
 

@@ -19,9 +19,12 @@
 | ファイル | 内容 |
 | --- | --- |
 | [examples/dev-plan.html](examples/dev-plan.html) | 開発計画：6 スプリント、6 レーン、4 マイルストーン、クリティカルパス、P0 / P1 / P2 の範囲切り替え、機能一覧表 |
+| [examples/dev-plan-editable.html](examples/dev-plan-editable.html) | レイアウト編集：編集を有効にした開発計画（移動・幅変更・線の追加。デモでは「保存」で JSON をダウンロード） |
 | [examples/system-architecture.html](examples/system-architecture.html) | システム構成：コンテナ型レイアウト、ストア関連のドット表示、コンポーネント × ストアの対応表、M0 / PoC 切り替え |
 
-GitHub 上では HTML がプレビューされないため、ダウンロードしてブラウザで開いてください。
+**オンラインデモ：** https://xuguanghaigoogle.github.io/interactive-diagram-html/
+
+GitHub 上では HTML がプレビューされないため、オンラインデモを開くか、ダウンロードしてブラウザで開いてください。
 
 ## インストール
 
