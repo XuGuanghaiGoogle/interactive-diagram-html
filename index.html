@@ -16,14 +16,20 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
-       font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.6}
+       font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI","Meiryo","Microsoft YaHei","PingFang SC",system-ui,sans-serif;line-height:1.65}
+  html[lang="ja"] body,html[lang="zh"] body{line-height:1.8}
   a{color:var(--accent-ink)}
-  .wrap{max-width:1040px;margin:0 auto;padding:48px 22px 64px}
-  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px;font-size:14px}
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 22px 64px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:30px;font-size:14px}
   .top .name{font-weight:700;letter-spacing:.01em}
-  .top nav a{margin-left:16px;text-decoration:none}
-  h1{font-size:clamp(28px,4.2vw,42px);line-height:1.2;margin:0 0 14px;letter-spacing:-.01em}
-  .lead{font-size:17px;color:var(--muted);max-width:760px;margin:0 0 10px}
+  .top nav{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .top nav a{text-decoration:none}
+  .lang{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--card)}
+  .lang button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 11px;cursor:pointer}
+  .lang button+button{border-left:1px solid var(--line)}
+  .lang button[aria-pressed="true"]{background:var(--accent);color:#fff}
+  h1{font-size:clamp(28px,4.2vw,42px);line-height:1.25;margin:0 0 14px;letter-spacing:-.01em}
+  .lead{font-size:17px;color:var(--muted);max-width:780px;margin:0 0 10px}
   .langs{font-size:14px;color:var(--muted);margin:0 0 26px}
   .cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:44px}
   .btn{display:inline-block;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
@@ -53,20 +59,24 @@
     <span class="name">interactive-diagram-html</span>
     <nav>
       <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html">GitHub</a>
-      <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html/blob/main/README.ja.md">日本語</a>
-      <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html/blob/main/README.zh.md">中文</a>
+      <a id="readme" href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html#readme">README</a>
+      <span class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">English</button>
+        <button type="button" data-lang="ja" aria-pressed="false">日本語</button>
+        <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+      </span>
     </nav>
   </div>
 
-  <h1>Diagrams you can click, read and rearrange</h1>
-  <p class="lead">A Claude Code skill that turns architecture diagrams, process flows and development plans into a single interactive HTML file through a guided conversation. Click any block to read its role, functions and scope; drag blocks and draw lines when you want to adjust the layout yourself.</p>
-  <p class="langs">The demos below are in Japanese. Pages can be generated in English, Japanese or Chinese.</p>
+  <h1 data-i="h1">Diagrams you can click, read and rearrange</h1>
+  <p class="lead" data-i="lead">A Claude Code skill that turns architecture diagrams, process flows and development plans into a single interactive HTML file through a guided conversation. Click any block to read its role, functions and scope; drag blocks and draw lines when you want to adjust the layout yourself.</p>
+  <p class="langs" data-i="langs">The demos below are in Japanese. Pages can be generated in English, Japanese or Chinese.</p>
   <div class="cta">
-    <a class="btn pri" href="examples/dev-plan-editable.html">Try the editor demo</a>
-    <a class="btn" href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html">View on GitHub</a>
+    <a class="btn pri" href="examples/dev-plan-editable.html" data-i="ctaTry">Try the editor demo</a>
+    <a class="btn" href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html" data-i="ctaGh">View on GitHub</a>
   </div>
 
-  <h2>Live demos</h2>
+  <h2 data-i="demos">Live demos</h2>
   <div class="grid">
     <a class="card" href="examples/system-architecture.html">
       <div class="thumb" aria-hidden="true">
@@ -84,25 +94,30 @@
           <path d="M72 39 H105 M155 32 H165 M240 39 H215" stroke="#5a6472" fill="none"/>
         </svg>
       </div>
-      <h3>System architecture</h3>
-      <p>Container layout with storage relations, a component × store matrix and an M0 / PoC scope toggle.</p>
-      <div class="tags"><span class="tag">Container</span><span class="tag">View only</span></div>
+      <h3 data-i="c1t">System architecture</h3>
+      <p data-i="c1d">Container layout with storage relations, a component × store matrix and an M0 / PoC scope toggle.</p>
+      <div class="tags"><span class="tag" data-i="tagContainer">Container</span><span class="tag" data-i="tagView">View only</span></div>
     </a>
     <a class="card" href="examples/dev-plan.html">
       <div class="thumb" aria-hidden="true">
         <svg viewBox="0 0 300 120">
           <g stroke="#cfd6e0" stroke-dasharray="3 3"><path d="M60 8 V114 M120 8 V114 M180 8 V114 M240 8 V114"/></g>
-          <rect x="66" y="16" width="48" height="14" rx="3" fill="#eaf3fd" stroke="#0078D4"/>
-          <rect x="126" y="40" width="102" height="14" rx="3" fill="#fff1e3" stroke="#ED7100"/>
-          <rect x="186" y="64" width="48" height="14" rx="3" fill="#e9f7f0" stroke="#13A10E"/>
-          <rect x="246" y="88" width="46" height="14" rx="3" fill="#eef1fb" stroke="#5C6BC0"/>
-          <path d="M114 23 H120 V47 H126 M228 47 H232 V71 H234 M234 71 H240 V95 H246" stroke="#c2410c" stroke-width="1.6" fill="none"/>
-          <polygon points="150,6 158,12 150,18 142,12" fill="#f3ecfb" stroke="#7c3aed"/>
+          <polygon points="180,6 188,13 180,20 172,13" fill="#f3ecfb" stroke="#7c3aed"/>
+          <rect x="66" y="28" width="48" height="14" rx="3" fill="#eaf3fd" stroke="#0078D4"/>
+          <rect x="126" y="50" width="48" height="14" rx="3" fill="#fff1e3" stroke="#ED7100"/>
+          <rect x="186" y="72" width="48" height="14" rx="3" fill="#e9f7f0" stroke="#13A10E"/>
+          <rect x="246" y="94" width="46" height="14" rx="3" fill="#eef1fb" stroke="#5C6BC0"/>
+          <rect x="66" y="94" width="108" height="14" rx="3" fill="#fdeefa" stroke="#C925D1"/>
+          <g stroke="#c2410c" stroke-width="1.6" fill="none">
+            <path d="M114 35 H120 V57 H126"/>
+            <path d="M174 57 H180 V79 H186"/>
+            <path d="M234 79 H240 V101 H246"/>
+          </g>
         </svg>
       </div>
-      <h3>Development plan</h3>
-      <p>Six sprints on a timeline, swim lanes, milestones, the critical path and a P0 / P1 / P2 release scope toggle.</p>
-      <div class="tags"><span class="tag">Timeline</span><span class="tag">View only</span></div>
+      <h3 data-i="c2t">Development plan</h3>
+      <p data-i="c2d">Six sprints on a timeline, swim lanes, milestones, the critical path and a P0 / P1 / P2 release scope toggle.</p>
+      <div class="tags"><span class="tag" data-i="tagTimeline">Timeline</span><span class="tag" data-i="tagView">View only</span></div>
     </a>
     <a class="card" href="examples/dev-plan-editable.html">
       <div class="thumb" aria-hidden="true">
@@ -116,28 +131,106 @@
           <path d="M226 26 l0 16 l4 -4 l3 7 l3 -1 l-3 -7 l6 0 z" fill="#18202c" stroke="#fff" stroke-width=".8"/>
         </svg>
       </div>
-      <h3>Layout editor</h3>
-      <p>Press 「レイアウト編集」 to drag blocks, resize them and connect them. In this demo, Save downloads the JSON instead of writing a file.</p>
-      <div class="tags"><span class="tag">Editable</span><span class="tag">Try it</span></div>
+      <h3 data-i="c3t">Layout editor</h3>
+      <p data-i="c3d">Press 「レイアウト編集」 to drag blocks, resize them and connect them. In this demo, Save downloads the JSON instead of writing a file.</p>
+      <div class="tags"><span class="tag" data-i="tagEdit">Editable</span><span class="tag" data-i="tagTry">Try it</span></div>
     </a>
   </div>
 
-  <h2>What you get</h2>
+  <h2 data-i="get">What you get</h2>
   <ul class="feat">
-    <li><b>One HTML file</b><span>No external resources. Send it by mail or drop it on a shared drive.</span></li>
-    <li><b>Details on click</b><span>Each block opens a panel with role, functions, screens and scope.</span></li>
-    <li><b>Checked layout</b><span>The build script flags overlapping blocks, lines through blocks and broken IDs.</span></li>
-    <li><b>Optional editing</b><span>Drag, resize and connect in the browser, then save back to the data JSON locally.</span></li>
-    <li><b>Workload per phase</b><span>Development plans can show features, screens and effort per phase as a chart.</span></li>
-    <li><b>Three languages</b><span>UI text in English, Japanese or Chinese.</span></li>
+    <li><b data-i="f1t">One HTML file</b><span data-i="f1d">No external resources. Send it by mail or drop it on a shared drive.</span></li>
+    <li><b data-i="f2t">Details on click</b><span data-i="f2d">Each block opens a panel with role, functions, screens and scope.</span></li>
+    <li><b data-i="f3t">Checked layout</b><span data-i="f3d">The build script flags overlapping blocks, lines through blocks and broken IDs.</span></li>
+    <li><b data-i="f4t">Optional editing</b><span data-i="f4d">Drag, resize and connect in the browser, then save back to the data JSON locally.</span></li>
+    <li><b data-i="f5t">Workload per phase</b><span data-i="f5d">Development plans can show features, screens and effort per phase as a chart.</span></li>
+    <li><b data-i="f6t">Three languages</b><span data-i="f6d">UI text in English, Japanese or Chinese.</span></li>
   </ul>
 
-  <h2>Install in Claude Code</h2>
+  <h2 data-i="install">Install in Claude Code</h2>
   <pre><code>/plugin marketplace add XuGuanghaiGoogle/interactive-diagram-html
 /plugin install interactive-diagram-html@interactive-diagram-html</code></pre>
-  <p class="note">Then describe what you need, for example: “Turn this repository into an architecture diagram and mark the PoC scope.” Requires Node.js 18 or later. Works with Codex and other agents too — see the README.</p>
+  <p class="note" data-i="installNote">Then describe what you need, for example: “Turn this repository into an architecture diagram and mark the PoC scope.” Requires Node.js 18 or later. Works with Codex and other agents too — see the README.</p>
 
   <footer>MIT License · <a href="https://github.com/XuGuanghaiGoogle/interactive-diagram-html">github.com/XuGuanghaiGoogle/interactive-diagram-html</a></footer>
 </div>
+
+<script>
+(function(){
+  'use strict';
+  var T={
+    ja:{
+      title:'interactive-diagram-html — オンラインデモ',
+      h1:'クリックして読める、ドラッグして組み替えられる図解',
+      lead:'システム構成図・処理フロー図・開発計画を、対話しながら 1 ファイルのインタラクティブ HTML にまとめる Claude Code スキルです。ブロックをクリックすると役割・機能・範囲が開き、レイアウトを自分で直したいときはブロックの移動や線の追加もできます。',
+      langs:'下のデモは日本語です。生成するページは日本語・英語・中国語から選べます。',
+      ctaTry:'編集デモを試す', ctaGh:'GitHub で見る', demos:'オンラインデモ',
+      c1t:'システム構成図', c1d:'コンテナ型レイアウト、ストア関連の表示、コンポーネント × ストアの対応表、M0 / PoC の範囲切り替え。',
+      c2t:'開発計画', c2d:'6 スプリントのタイムライン、スイムレーン、マイルストーン、クリティカルパス、P0 / P1 / P2 のリリース範囲切り替え。',
+      c3t:'レイアウト編集', c3d:'「レイアウト編集」を押すと、ブロックの移動・幅の変更・線の追加ができます。デモではファイルに保存できないため、「保存」で JSON がダウンロードされます。',
+      tagContainer:'コンテナ型', tagTimeline:'タイムライン型', tagView:'閲覧のみ', tagEdit:'編集可能', tagTry:'試せます',
+      get:'できること',
+      f1t:'HTML 1 ファイル', f1d:'外部リソース不要。メール添付や共有フォルダにそのまま置けます。',
+      f2t:'クリックで詳細', f2d:'各ブロックに役割・機能・画面・範囲をまとめたパネルが開きます。',
+      f3t:'レイアウトを自動チェック', f3d:'ブロックの重なり、ブロックを貫通する線、ID の誤りをビルド時に検出します。',
+      f4t:'編集（任意）', f4d:'ブラウザで移動・幅変更・線の追加を行い、ローカルでデータ JSON に保存できます。',
+      f5t:'フェーズ別の工数', f5d:'開発計画ではフェーズごとの機能数・画面数・工数をグラフで表示できます。',
+      f6t:'3 言語対応', f6d:'画面の文言は日本語・英語・中国語に対応しています。',
+      install:'Claude Code へのインストール',
+      installNote:'インストール後は「このリポジトリを構成図にして、PoC の範囲を示して」のように依頼するだけです。Node.js 18 以上が必要です。Codex などほかのエージェントでも使えます（README 参照）。',
+      readme:'https://github.com/XuGuanghaiGoogle/interactive-diagram-html/blob/main/README.ja.md'
+    },
+    zh:{
+      title:'interactive-diagram-html — 在线演示',
+      h1:'能点开看说明、能拖动调整的图解',
+      lead:'一个 Claude Code skill：通过对话把系统构成图、处理流程图和开发计划整理成单文件交互式 HTML。点击任意方块即可查看作用、功能和范围；想自己调整布局时，还可以拖动方块、画连线。',
+      langs:'下方演示为日语版。生成的页面可选中文、日语或英语。',
+      ctaTry:'试用编辑演示', ctaGh:'在 GitHub 上查看', demos:'在线演示',
+      c1t:'系统构成图', c1d:'容器型布局、存储关联标记、组件 × 存储对照表、M0 / PoC 范围开关。',
+      c2t:'开发计划', c2d:'6 个 Sprint 的时间轴、泳道、里程碑、关键路径、P0 / P1 / P2 发布范围开关。',
+      c3t:'布局编辑', c3d:'点击「レイアウト編集」即可拖动方块、调整宽度、添加连线。演示页无法写入文件，点「保存」会下载 JSON。',
+      tagContainer:'容器型', tagTimeline:'时间轴型', tagView:'仅查看', tagEdit:'可编辑', tagTry:'可试用',
+      get:'功能要点',
+      f1t:'单个 HTML 文件', f1d:'不依赖外部资源，可直接邮件发送或放到共享盘。',
+      f2t:'点击查看详情', f2d:'每个方块都能打开面板，查看作用、功能、画面和范围。',
+      f3t:'布局自动校验', f3d:'生成时检查方块重叠、连线穿过方块和 ID 引用错误。',
+      f4t:'可选编辑', f4d:'在浏览器里拖动、调整宽度、画连线，并在本地保存回数据 JSON。',
+      f5t:'按期统计工作量', f5d:'开发计划可按期以图表显示机能数、画面数和工数。',
+      f6t:'三种语言', f6d:'界面文字支持中文、日语和英语。',
+      install:'安装到 Claude Code',
+      installNote:'安装后直接说出需求即可，例如「把这个仓库做成构成图，标出 PoC 范围」。需要 Node.js 18 或以上。也可用于 Codex 等其他 agent，详见 README。',
+      readme:'https://github.com/XuGuanghaiGoogle/interactive-diagram-html/blob/main/README.zh.md'
+    }
+  };
+  var EN={}, nodes=document.querySelectorAll('[data-i]');
+  nodes.forEach(function(n){EN[n.getAttribute('data-i')]=n.innerHTML;});
+  EN.title=document.title;EN.readme=document.getElementById('readme').href;
+
+  function apply(lang){
+    var d=lang==='en'?EN:(T[lang]||EN);
+    if(d===EN)lang='en';
+    nodes.forEach(function(n){var k=n.getAttribute('data-i');if(d[k]!=null)n.innerHTML=d[k];});
+    document.title=d.title;document.documentElement.lang=lang;
+    document.getElementById('readme').href=d.readme;
+    document.querySelectorAll('.lang button').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-lang')===lang));});
+    return lang;
+  }
+  function pick(){
+    var q=new URLSearchParams(location.search).get('lang');
+    if(q&&(q==='en'||T[q]))return q;
+    try{var s=localStorage.getItem('idh-lang');if(s)return s;}catch(e){}
+    var nav=(navigator.language||'en').toLowerCase();
+    return nav.indexOf('ja')===0?'ja':nav.indexOf('zh')===0?'zh':'en';
+  }
+  apply(pick());
+  document.querySelectorAll('.lang button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var lang=apply(b.getAttribute('data-lang'));
+      try{localStorage.setItem('idh-lang',lang);}catch(e){}
+      var u=new URL(location.href);u.searchParams.set('lang',lang);history.replaceState(null,'',u);
+    });
+  });
+})();
+</script>
 </body>
 </html>

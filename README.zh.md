@@ -22,7 +22,7 @@
 | [examples/dev-plan-editable.html](examples/dev-plan-editable.html) | 布局编辑：开启编辑的开发计划（拖动、改宽度、连线；演示页中「保存」会下载 JSON） |
 | [examples/system-architecture.html](examples/system-architecture.html) | 系统构成：容器布局、存储关联圆点、组件 × 存储矩阵、M0 / PoC 开关 |
 
-**在线演示：** https://xuguanghaigoogle.github.io/interactive-diagram-html/
+**在线演示：** https://xuguanghaigoogle.github.io/interactive-diagram-html/?lang=zh
 
 GitHub 不会渲染 HTML 预览，请打开在线演示，或下载后用浏览器打开。
 
