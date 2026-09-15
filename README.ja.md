@@ -22,7 +22,7 @@
 | [examples/dev-plan-editable.html](examples/dev-plan-editable.html) | レイアウト編集：編集を有効にした開発計画（移動・幅変更・線の追加。デモでは「保存」で JSON をダウンロード） |
 | [examples/system-architecture.html](examples/system-architecture.html) | システム構成：コンテナ型レイアウト、ストア関連のドット表示、コンポーネント × ストアの対応表、M0 / PoC 切り替え |
 
-**オンラインデモ：** https://xuguanghaigoogle.github.io/interactive-diagram-html/
+**オンラインデモ：** https://xuguanghaigoogle.github.io/interactive-diagram-html/?lang=ja
 
 GitHub 上では HTML がプレビューされないため、オンラインデモを開くか、ダウンロードしてブラウザで開いてください。
 
